@@ -210,7 +210,7 @@ public final class ExplorationHack extends Hack implements UpdateListener
 	
 	private void moveTowards(BlockPos target)
 	{
-		Vec3d playerPos = MC.player.getPos();
+		Vec3d playerPos = new Vec3d(MC.player.getX(), MC.player.getY(), MC.player.getZ());
 		Vec3d targetPos = Vec3d.ofCenter(target);
 		
 		// Calculate horizontal distance and direction
@@ -247,7 +247,7 @@ public final class ExplorationHack extends Hack implements UpdateListener
 	
 	private boolean hasReachedTarget(BlockPos target)
 	{
-		Vec3d playerPos = MC.player.getPos();
+		Vec3d playerPos = new Vec3d(MC.player.getX(), MC.player.getY(), MC.player.getZ());
 		Vec3d targetPos = Vec3d.ofCenter(target);
 		
 		double deltaX = targetPos.x - playerPos.x;

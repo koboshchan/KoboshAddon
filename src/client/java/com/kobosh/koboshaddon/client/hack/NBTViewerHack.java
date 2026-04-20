@@ -95,7 +95,8 @@ public final class NBTViewerHack extends Hack
 		}
 		
 		// Close NBT view with ESC
-		if(showingNBT && InputUtil.isKeyPressed(MC.getWindow().getHandle(),
+		// Close NBT view with ESC
+		if(showingNBT && InputUtil.isKeyPressed(MC.getWindow(),
 			GLFW.GLFW_KEY_ESCAPE))
 		{
 			showingNBT = false;
@@ -278,8 +279,10 @@ public final class NBTViewerHack extends Hack
 			windowY + windowHeight, 0xC0000000);
 		
 		// Window border
-		context.drawBorder(windowX, windowY, windowWidth, windowHeight,
-			0xFFFFFFFF);
+		context.fill(windowX, windowY, windowX + windowWidth, windowY + 1, 0xFFFFFFFF);
+		context.fill(windowX, windowY + windowHeight - 1, windowX + windowWidth, windowY + windowHeight, 0xFFFFFFFF);
+		context.fill(windowX, windowY, windowX + 1, windowY + windowHeight, 0xFFFFFFFF);
+		context.fill(windowX + windowWidth - 1, windowY, windowX + windowWidth, windowY + windowHeight, 0xFFFFFFFF);
 		
 		// Title bar
 		context.fill(windowX + 1, windowY + 1, windowX + windowWidth - 1,

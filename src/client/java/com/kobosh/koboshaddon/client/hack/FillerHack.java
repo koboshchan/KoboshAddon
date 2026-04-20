@@ -267,7 +267,7 @@ public final class FillerHack extends Hack
 	{
 		// continue with next step
 		if(step.pos != null && InputUtil
-			.isKeyPressed(MC.getWindow().getHandle(), GLFW.GLFW_KEY_ENTER))
+			.isKeyPressed(MC.getWindow(), GLFW.GLFW_KEY_ENTER))
 		{
 			step = Step.values()[step.ordinal() + 1];
 			

@@ -260,7 +260,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		if(hotbarSlot != -1)
 		{
 			// Switch to the potion and use it
-			MC.player.getInventory().selectedSlot = hotbarSlot;
+			MC.player.getInventory().setSelectedSlot(hotbarSlot);
 			MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
 			ChatUtils.message("Used invisibility potion from hotbar slot "
 				+ (hotbarSlot + 1));
@@ -286,7 +286,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 				
 				// Move potion to hotbar and use it
 				moveItemToHotbar(inventorySlot, targetHotbarSlot);
-				MC.player.getInventory().selectedSlot = targetHotbarSlot;
+				MC.player.getInventory().setSelectedSlot(targetHotbarSlot);
 				MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
 				ChatUtils.message(
 					"Moved and used invisibility potion from inventory");
@@ -416,8 +416,8 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 			return false;
 		
 		// Switch to block and place it
-		int oldSlot = MC.player.getInventory().selectedSlot;
-		MC.player.getInventory().selectedSlot = blockSlot;
+		int oldSlot = MC.player.getInventory().getSelectedSlot();
+		MC.player.getInventory().setSelectedSlot(blockSlot);
 		
 		// Create air place hit result
 		Vec3d hitVec = Vec3d.ofCenter(pos);
@@ -428,7 +428,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		InteractionSimulator.rightClickBlock(hitResult);
 		
 		// Restore original slot
-		MC.player.getInventory().selectedSlot = oldSlot;
+		MC.player.getInventory().setSelectedSlot(oldSlot);
 		
 		return true;
 	}

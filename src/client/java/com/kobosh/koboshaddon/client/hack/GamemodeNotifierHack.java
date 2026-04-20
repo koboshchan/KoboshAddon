@@ -83,7 +83,7 @@ public final class GamemodeNotifierHack extends Hack
 			if(!shouldNotify(newGameMode))
 				continue;
 			
-			String playerName = playerEntry.getProfile().getName();
+			String playerName = playerEntry.getProfile().name();
 			String gameModeName = getGameModeName(newGameMode);
 			ChatUtils.message("Player " + playerName + " changed gamemode to "
 				+ gameModeName);

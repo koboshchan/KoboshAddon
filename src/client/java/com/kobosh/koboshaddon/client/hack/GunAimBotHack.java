@@ -223,7 +223,7 @@ public final class GunAimBotHack extends Hack
 		// Filter out friends if enabled
 		if(ignoreFriends.isChecked())
 			stream = stream.filter(e -> !WURST.getFriends()
-				.contains(((PlayerEntity)e).getGameProfile().getName()));
+				.contains(((PlayerEntity)e).getGameProfile().name()));
 		
 		// Filter out invisible players if enabled
 		if(ignoreInvisible.isChecked())

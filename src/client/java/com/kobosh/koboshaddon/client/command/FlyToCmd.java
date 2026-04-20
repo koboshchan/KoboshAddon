@@ -52,10 +52,12 @@ public final class FlyToCmd extends Command implements UpdateListener
 		}
 		
 		// Validate Y coordinate bounds
-		if(y < MC.world.getBottomY() || y > MC.world.getTopY())
+		int minY = MC.world.getBottomY();
+		int maxY = minY + MC.world.getHeight() - 1;
+		if(y < minY || y > maxY)
 		{
 			throw new CmdError("Y coordinate must be between "
-				+ MC.world.getBottomY() + " and " + MC.world.getTopY() + ".");
+				+ minY + " and " + maxY + ".");
 		}
 		
 		targetPos = new BlockPos(x, y, z);
@@ -76,7 +78,7 @@ public final class FlyToCmd extends Command implements UpdateListener
 			return;
 		}
 		
-		Vec3d playerPos = MC.player.getPos();
+		Vec3d playerPos = new Vec3d(MC.player.getX(), MC.player.getY(), MC.player.getZ());
 		Vec3d targetCenter = Vec3d.ofCenter(targetPos);
 		
 		// Check if we've reached the target (within 2 blocks)

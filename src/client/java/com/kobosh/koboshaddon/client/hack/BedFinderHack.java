@@ -7,6 +7,7 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -16,28 +17,24 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Collectors;
 
-import net.minecraft.client.render.VertexFormat;
-
 import net.minecraft.block.Block;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
-import net.wurstclient.WurstRenderLayers;
 import net.wurstclient.events.PacketInputListener;
 import net.wurstclient.events.RenderListener;
 import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.ChunkAreaSetting;
+import net.wurstclient.settings.ColorSetting;
+import net.wurstclient.settings.EspStyleSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
-import net.wurstclient.util.BlockVertexCompiler;
 import net.wurstclient.util.ChatUtils;
-import net.wurstclient.util.EasyVertexBuffer;
-import net.wurstclient.util.RegionPos;
 import net.wurstclient.util.RenderUtils;
 import net.wurstclient.util.RotationUtils;
 import net.wurstclient.util.chunk.ChunkSearcher;
@@ -48,6 +45,11 @@ import net.wurstclient.util.chunk.ChunkSearcherCoordinator;
 public final class BedFinderHack extends Hack
 	implements UpdateListener, RenderListener
 {
+	private final EspStyleSetting style = new EspStyleSetting();
+	
+	private final ColorSetting color = new ColorSetting("Color",
+		"Color of ESP overlays around beds.", new Color(139, 31, 90));
+	
 	private final List<String> bedTypes = Arrays.asList("white_bed",
 		"orange_bed", "magenta_bed", "light_blue_bed", "yellow_bed", "lime_bed",
 		"pink_bed", "gray_bed", "light_gray_bed", "cyan_bed", "purple_bed",
@@ -72,16 +74,15 @@ public final class BedFinderHack extends Hack
 	
 	private ForkJoinPool forkJoinPool;
 	private ForkJoinTask<HashSet<BlockPos>> getMatchingBlocksTask;
-	private ForkJoinTask<ArrayList<int[]>> compileVerticesTask;
-	
-	private EasyVertexBuffer vertexBuffer;
-	private RegionPos bufferRegion;
+	private List<Box> bedBoxes = List.of();
 	private boolean bufferUpToDate;
 	
 	public BedFinderHack()
 	{
 		super("BedFinder");
 		setCategory(Category.RENDER);
+		addSetting(style);
+		addSetting(color);
 		addSetting(area);
 		addSetting(limit);
 		
@@ -126,11 +127,7 @@ public final class BedFinderHack extends Hack
 		stopBuildingBuffer();
 		coordinator.reset();
 		forkJoinPool.shutdownNow();
-		
-		if(vertexBuffer != null)
-			vertexBuffer.close();
-		vertexBuffer = null;
-		bufferRegion = null;
+		bedBoxes = List.of();
 	}
 	
 	@Override
@@ -163,29 +160,32 @@ public final class BedFinderHack extends Hack
 		if(!getMatchingBlocksTask.isDone())
 			return;
 		
-		if(compileVerticesTask == null)
-			startCompileVerticesTask();
-		
-		if(!compileVerticesTask.isDone())
-			return;
-		
 		if(!bufferUpToDate)
-			setBufferFromTask();
+			setBoxesFromTask();
 	}
 	
 	@Override
 	public void onRender(MatrixStack matrixStack, float partialTicks)
 	{
-		if(vertexBuffer == null || bufferRegion == null)
+		if(bedBoxes.isEmpty())
 			return;
 		
-		matrixStack.push();
-		RenderUtils.applyRegionalRenderOffset(matrixStack, bufferRegion);
+		if(style.hasBoxes())
+		{
+			int quadsColor = color.getColorI(0x40);
+			int linesColor = color.getColorI(0x80);
+			RenderUtils.drawSolidBoxes(matrixStack, bedBoxes, quadsColor, false);
+			RenderUtils.drawOutlinedBoxes(matrixStack, bedBoxes, linesColor,
+				false);
+		}
 		
-		// Use a different color scheme for beds (red/pink theme)
-		vertexBuffer.draw(matrixStack, WurstRenderLayers.ESP_QUADS);
-		
-		matrixStack.pop();
+		if(style.hasLines())
+		{
+			int tracerColor = color.getColorI(0x80);
+			RenderUtils.drawTracers(matrixStack, partialTicks,
+				bedBoxes.stream().map(Box::getCenter).toList(), tracerColor,
+				false);
+		}
 	}
 	
 	private void stopBuildingBuffer()
@@ -193,10 +193,7 @@ public final class BedFinderHack extends Hack
 		if(getMatchingBlocksTask != null)
 			getMatchingBlocksTask.cancel(true);
 		getMatchingBlocksTask = null;
-		
-		if(compileVerticesTask != null)
-			compileVerticesTask.cancel(true);
-		compileVerticesTask = null;
+		bedBoxes = List.of();
 		
 		bufferUpToDate = false;
 	}
@@ -213,7 +210,7 @@ public final class BedFinderHack extends Hack
 			.collect(Collectors.toCollection(HashSet::new)));
 	}
 	
-	private void startCompileVerticesTask()
+	private void setBoxesFromTask()
 	{
 		HashSet<BlockPos> matchingBlocks = getMatchingBlocksTask.join();
 		
@@ -226,29 +223,9 @@ public final class BedFinderHack extends Hack
 				+ limit.getValueString() + "\u00a7r results.");
 			notify = false;
 		}
-		
-		compileVerticesTask = forkJoinPool
-			.submit(() -> BlockVertexCompiler.compile(matchingBlocks));
-	}
-	
-	private void setBufferFromTask()
-	{
-		ArrayList<int[]> vertices = compileVerticesTask.join();
-		RegionPos region = RenderUtils.getCameraRegion();
-		
-		if(vertexBuffer != null)
-			vertexBuffer.close();
-		
-		vertexBuffer =
-			EasyVertexBuffer.createAndUpload(VertexFormat.DrawMode.QUADS,
-				VertexFormats.POSITION_COLOR, buffer -> {
-					for(int[] vertex : vertices)
-						buffer.vertex(vertex[0] - region.x(), vertex[1],
-							vertex[2] - region.z()).color(0xFFFF6666); // Light
-																		// red/pink
-				});
+
+		bedBoxes = matchingBlocks.stream().map(Box::new).toList();
 		
 		bufferUpToDate = true;
-		bufferRegion = region;
 	}
 }

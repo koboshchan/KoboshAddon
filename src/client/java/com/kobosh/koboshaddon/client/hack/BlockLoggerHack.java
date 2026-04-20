@@ -10,9 +10,9 @@ package com.kobosh.koboshaddon.client.hack;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -20,17 +20,14 @@ import java.util.stream.Collectors;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.block.Block;
-import net.minecraft.client.render.VertexFormat.DrawMode;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.WurstClient;
-import net.wurstclient.WurstRenderLayers;
 import net.wurstclient.events.PacketInputListener;
 import net.wurstclient.events.RenderListener;
 import net.wurstclient.events.UpdateListener;
@@ -39,10 +36,7 @@ import net.wurstclient.settings.BlockSetting;
 import net.wurstclient.settings.ChunkAreaSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
-import net.wurstclient.util.BlockVertexCompiler;
 import net.wurstclient.util.ChatUtils;
-import net.wurstclient.util.EasyVertexBuffer;
-import net.wurstclient.util.RegionPos;
 import net.wurstclient.util.RenderUtils;
 import net.wurstclient.util.RotationUtils;
 import net.wurstclient.util.chunk.ChunkSearcher;
@@ -78,9 +72,7 @@ public final class BlockLoggerHack extends Hack
 		new ChunkSearcherCoordinator(area);
 	private ForkJoinPool forkJoinPool;
 	private ForkJoinTask<HashSet<BlockPos>> getMatchingBlocksTask;
-	private ForkJoinTask<ArrayList<int[]>> compileVerticesTask;
-	private EasyVertexBuffer vertexBuffer;
-	private RegionPos bufferRegion;
+	private List<Box> blockBoxes = List.of();
 	private boolean bufferUpToDate;
 	
 	public BlockLoggerHack()
@@ -131,11 +123,7 @@ public final class BlockLoggerHack extends Hack
 		stopBuildingBuffer();
 		coordinator.reset();
 		forkJoinPool.shutdownNow();
-		
-		if(vertexBuffer != null)
-			vertexBuffer.close();
-		vertexBuffer = null;
-		bufferRegion = null;
+		blockBoxes = List.of();
 		
 		ChatUtils.message(
 			"Stopped logging. Found " + loggedBlocks.size() + " blocks total.");
@@ -181,33 +169,21 @@ public final class BlockLoggerHack extends Hack
 		if(!getMatchingBlocksTask.isDone())
 			return;
 		
-		if(compileVerticesTask == null)
-			startCompileVerticesTask();
-		
-		if(!compileVerticesTask.isDone())
-			return;
-		
 		if(!bufferUpToDate)
-			setBufferFromTask();
+			setBoxesFromTask();
 	}
 	
 	@Override
 	public void onRender(MatrixStack matrixStack, float partialTicks)
 	{
-		if(vertexBuffer == null || bufferRegion == null)
+		if(blockBoxes.isEmpty())
 			return;
-		
-		// Green color for blocks
-		RenderSystem.setShaderColor(0, 1, 0, 0.5F);
-		
-		matrixStack.push();
-		RenderUtils.applyRegionalRenderOffset(matrixStack, bufferRegion);
-		
-		vertexBuffer.draw(matrixStack, WurstRenderLayers.ESP_QUADS);
-		
-		matrixStack.pop();
-		
-		RenderSystem.setShaderColor(1, 1, 1, 1);
+
+		int quadsColor = 0x4000FF00;
+		int linesColor = 0x8000FF00;
+		RenderUtils.drawSolidBoxes(matrixStack, blockBoxes, quadsColor, false);
+		RenderUtils.drawOutlinedBoxes(matrixStack, blockBoxes, linesColor,
+			false);
 	}
 	
 	private void stopBuildingBuffer()
@@ -215,10 +191,7 @@ public final class BlockLoggerHack extends Hack
 		if(getMatchingBlocksTask != null)
 			getMatchingBlocksTask.cancel(true);
 		getMatchingBlocksTask = null;
-		
-		if(compileVerticesTask != null)
-			compileVerticesTask.cancel(true);
-		compileVerticesTask = null;
+		blockBoxes = List.of();
 		
 		bufferUpToDate = false;
 	}
@@ -251,7 +224,7 @@ public final class BlockLoggerHack extends Hack
 		});
 	}
 	
-	private void startCompileVerticesTask()
+	private void setBoxesFromTask()
 	{
 		HashSet<BlockPos> matchingBlocks = getMatchingBlocksTask.join();
 		
@@ -264,29 +237,10 @@ public final class BlockLoggerHack extends Hack
 				+ limit.getValueString() + "\u00a7r results.");
 			notify = false;
 		}
-		
-		compileVerticesTask = forkJoinPool
-			.submit(() -> BlockVertexCompiler.compile(matchingBlocks));
-	}
-	
-	private void setBufferFromTask()
-	{
-		ArrayList<int[]> vertices = compileVerticesTask.join();
-		RegionPos region = RenderUtils.getCameraRegion();
-		
-		if(vertexBuffer != null)
-			vertexBuffer.close();
-		
-		vertexBuffer = EasyVertexBuffer.createAndUpload(DrawMode.QUADS,
-			VertexFormats.POSITION_COLOR, buffer -> {
-				for(int[] vertex : vertices)
-					buffer.vertex(vertex[0] - region.x(), vertex[1],
-						vertex[2] - region.z()).color(0xFF00FF00); // Green
-																	// color
-			});
+
+		blockBoxes = matchingBlocks.stream().map(Box::new).toList();
 		
 		bufferUpToDate = true;
-		bufferRegion = region;
 	}
 	
 	private void setupLogging()

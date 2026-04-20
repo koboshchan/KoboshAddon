@@ -231,7 +231,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	private void findNextChest()
 	{
 		ClientPlayerEntity player = MC.player;
-		Vec3d playerPos = player.getPos();
+		Vec3d playerPos = new Vec3d(player.getX(), player.getY(), player.getZ());
 		double rangeSq = range.getValueSq();
 		
 		Stream<BlockPos> stream = ChunkUtils.getLoadedBlockEntities()
@@ -322,7 +322,8 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		ActionResult result = im.interactBlock(player, hand, hitResult);
 		
 		// Swing hand if interaction was successful
-		if(result.isAccepted() && result.shouldSwingHand())
+		// Swing hand if interaction was successful
+		if(result.isAccepted())
 			swingHand.swing(hand);
 		
 		// Mark that we're searching and set interaction time

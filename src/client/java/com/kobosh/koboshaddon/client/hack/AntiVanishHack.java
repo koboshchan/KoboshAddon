@@ -107,8 +107,8 @@ public final class AntiVanishHack extends Hack
 	{
 		Map<UUID, String> oldPlayers = Map.copyOf(playerCache);
 		playerCache = MC.getNetworkHandler().getPlayerList().stream()
-			.collect(Collectors.toMap(e -> e.getProfile().getId(),
-				e -> e.getProfile().getName()));
+			.collect(Collectors.toMap(e -> e.getProfile().id(),
+				e -> e.getProfile().name()));
 		
 		for(UUID uuid : oldPlayers.keySet())
 		{

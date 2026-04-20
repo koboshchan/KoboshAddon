@@ -108,7 +108,7 @@ public final class SpawnerPlayerEspHack extends Hack
 				return;
 			
 			// Get the current delay value
-			short delay = nbt.getShort("Delay");
+			short delay = nbt.getShort("Delay").orElse((short)0);
 			
 			// Normal spawner delay is 20 ticks (20s in NBT)
 			// If it's not 20, a player has activated it
@@ -125,15 +125,15 @@ public final class SpawnerPlayerEspHack extends Hack
 					// Try to get mob type from SpawnData
 					if(nbt.contains("SpawnData"))
 					{
-						NbtCompound spawnData = nbt.getCompound("SpawnData");
-						if(spawnData.contains("entity"))
+						NbtCompound spawnData = nbt.getCompound("SpawnData").orElse(null);
+						if(spawnData != null && spawnData.contains("entity"))
 						{
 							NbtCompound entity =
-								spawnData.getCompound("entity");
-							if(entity.contains("id"))
+								spawnData.getCompound("entity").orElse(null);
+							if(entity != null && entity.contains("id"))
 							{
 								mobType = entity.getString("id")
-									.replace("minecraft:", "");
+									.orElse("").replace("minecraft:", "");
 							}
 						}
 					}
