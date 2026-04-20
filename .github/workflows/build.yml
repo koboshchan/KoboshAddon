@@ -1,10 +1,6 @@
 name: Build WurstAddon
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [ push, pull_request ]
 
 jobs:
   build:
@@ -20,7 +16,7 @@ jobs:
       run: |
         cd wurst7-base
         git fetch origin
-        git checkout 1.21.1
+        git checkout ${{ github.ref_name }} || echo "Branch not found in submodule, staying on default."
         cd ..
 
     - name: Set up JDK 21
@@ -28,6 +24,7 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
+        cache: 'gradle'
 
     - name: Build Wurst7 (submodule)
       run: |
@@ -44,18 +41,18 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: KoboshAddon-build
+        name: ${{ github.event.repository.name }}-build
         path: |
-          build/libs/KoboshAddon-*.jar
-          wurst7-base/build/libs/Wurst-Client-*.jar
+          build/libs/*.jar
+          wurst7-base/build/libs/*.jar
         retention-days: 30
 
     - name: Create Release (on tag)
       if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
-          build/libs/WurstAddon-*.jar
-          wurst7-base/build/libs/Wurst-Client-*.jar
+          build/libs/*.jar
+          wurst7-base/build/libs/*.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
