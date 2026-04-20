@@ -1,16 +1,18 @@
 package com.kobosh.wurstaddon.client.hack;
 
 import net.wurstclient.Category;
+import net.wurstclient.SearchTags;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.util.ChatUtils;
-import net.wurstclient.SearchTags;
 
-/**
- * Example hack that sends a message in chat and then disables itself
- */
+@SearchTags({"example", "items", "writable_book"})
+public final class ExampleHack extends Hack {
 
- @SearchTags({"example"})
-public class ExampleHack extends Hack {
+    // Net-added items in ../Wurst7-1.21.1 from
+    // 9459157791e06b93730e68a11fe37e31daea3133..HEAD (inclusive).
+        private static final String[] NET_ADDED_ITEMS = {
+            "minecraft:writable_book"
+    };
 
     public ExampleHack() {
         super("ExampleHack");
@@ -19,14 +21,16 @@ public class ExampleHack extends Hack {
 
     @Override
     protected void onEnable() {
-        ChatUtils.message("Example Hack enabled! This message will be sent once.");
+        ChatUtils.message("Net-added items in range: " + NET_ADDED_ITEMS.length);
 
-        // Disable the hack after sending the message
+        for (String itemId : NET_ADDED_ITEMS) {
+            ChatUtils.message("- " + itemId);
+        }
+
         setEnabled(false);
     }
 
     @Override
     protected void onDisable() {
-        // Cleanup if needed
     }
 }

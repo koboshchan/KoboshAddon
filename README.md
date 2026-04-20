@@ -1,4 +1,4 @@
-# WurstAddon
+# KoboshAddon
 
 ## Overview
 
@@ -7,11 +7,21 @@ This project is a Wurst7 addon for Minecraft 1.21.1.
 It uses Java ServiceLoader to register an addon provider that contributes hacks
 to Wurst at startup.
 
-## Current Example
+## Current Hack
 
-`ExampleHack` demonstrates a minimal hack:
+`ExampleHack` is a one-shot hack that reports the final net-added item set from
+`../Wurst7-1.21.1` in the commit range:
 
-- Sends "hello world" when enabled.
+- `9459157791e06b93730e68a11fe37e31daea3133..HEAD` (inclusive)
+
+Net result in this range:
+
+- `minecraft:writable_book`
+
+Behavior:
+
+- Prints the count of net-added items.
+- Prints each item id in chat.
 - Disables itself immediately after running.
 
 ## How Addon Registration Works
@@ -33,7 +43,7 @@ requires koboshchan/Wurst7 for add on support
 
 current supported branches are `master` and `1.21.1`
 
-2. Build this addon:
+1. Build this addon:
 
    - `./gradlew build`
 
@@ -44,6 +54,7 @@ two locations.
 
 When Wurst starts, verify a log line similar to:
 
-- `[Wurst] Loaded addon: WurstAddon (...)`
+- `[Wurst] Loaded addon: KoboshAddon (...)`
 
-Then confirm `Example Hack` appears in the Wurst hack list and can be toggled.
+Then confirm `Example Hack` appears in the Wurst hack list, can be toggled,
+prints `minecraft:writable_book`, and auto-disables.

@@ -1,1 +1,23 @@
-{"description.wurst.hack.examplehack": "Example Hack description"}
+{
+  "description.wurst.hack.airwalk": "Lets you walk on a configurable Y level in mid-air.",
+  "description.wurst.hack.antivanish": "Highlights and tracks entities that try to vanish from view.",
+  "description.wurst.hack.autocraft": "Automatically crafts configured items while in a crafting screen.",
+  "description.wurst.hack.autotrader": "Automates villager trading actions for selected trades.",
+  "description.wurst.hack.bedfinder": "Searches loaded chunks for bed blocks and highlights nearby matches.",
+  "description.wurst.hack.blocklogger": "Logs and highlights matching blocks, with save/load support.",
+  "description.wurst.hack.bookdupe": "Attempts book-based duplication workflow used by some servers.",
+  "description.wurst.hack.bookkick": "Sends oversized book payloads to kick vulnerable players/servers.",
+  "description.wurst.hack.dragonaimbot": "Aims at Ender Dragons with optional prediction and smoothing.",
+  "description.wurst.hack.exploration": "Automates movement and route progress for exploration tasks.",
+  "description.wurst.hack.filler": "Places configured blocks to fill selected nearby spaces.",
+  "description.wurst.hack.gamemodenotifier": "Notifies when your gamemode appears to change.",
+  "description.wurst.hack.gunaimbot": "Aims ranged attacks at target entities with configurable behavior.",
+  "description.wurst.hack.infiniteexplorer": "Continuously explores by extending exploration goals.",
+  "description.wurst.hack.invisreminder": "Warns you when invisibility state needs attention.",
+  "description.wurst.hack.itemsearch": "Searches for configured item targets in containers and results.",
+  "description.wurst.hack.itemtp": "Teleports dropped items to your position on supported servers.",
+  "description.wurst.hack.nbtviewer": "Displays NBT information for looked-at blocks and entities.",
+  "description.wurst.hack.opsign": "Creates prefilled operator-style signs for quick placement.",
+  "description.wurst.hack.spawnerplayeresp": "Highlights player-related mob spawner activity.",
+  "description.wurst.hack.vehicleonehit": "Destroys boats and minecarts by sending extra hit packets."
+}
