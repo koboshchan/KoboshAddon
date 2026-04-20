@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a Wurst7 addon for Minecraft 1.21.1. It ports all features
+This project is a Wurst7 addon for Minecraft 1.21.10. It ports all features
 added to [koboshchan/Wurst7](https://github.com/koboshchan/Wurst7) between
 commit `9459157791e06b93730e68a11fe37e31daea3133` and HEAD (inclusive) as a
 standalone addon — no modifications to Wurst core required.
@@ -58,7 +58,7 @@ No manual registration in `WurstaddonClient` is required.
    - `../Wurst7` (sibling checkout): `./gradlew build` in that directory
 
    Requires [koboshchan/Wurst7](https://github.com/koboshchan/Wurst7).
-   Supported branches: `master`, `1.21.1`.
+   Supported branches: `master`, `1.21.10`.
 
 2. Build this addon:
 
