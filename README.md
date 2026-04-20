@@ -46,7 +46,7 @@ standalone addon — no modifications to Wurst core required.
 
 1. Provider class: `WurstAddonHackAddon` implements `net.wurstclient.addon.Addon`.
 2. Service file: `src/client/resources/META-INF/services/net.wurstclient.addon.Addon`.
-3. The service file points to `com.kobosh.wurstaddon.client.WurstAddonHackAddon`.
+3. The service file points to `com.kobosh.koboshaddon.client.WurstAddonHackAddon`.
 
 No manual registration in `WurstaddonClient` is required.
 

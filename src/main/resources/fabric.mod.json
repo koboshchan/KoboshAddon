@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "id": "wurstaddon",
+  "id": "koboshaddon",
   "version": "${version}",
   "name": "KoboshAddon",
   "description": "Wurst addon that exposes final net-added items from a Wurst commit range",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "icon": "assets/wurstaddon/icon.png",
+  "icon": "assets/koboshaddon/icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
-      "com.kobosh.wurstaddon.client.WurstaddonDataGenerator"
+      "com.kobosh.koboshaddon.client.KoboshaddonDataGenerator"
     ],
     "client": [
-      "com.kobosh.wurstaddon.client.WurstaddonClient"
+      "com.kobosh.koboshaddon.client.KoboshaddonClient"
     ],
     "main": [
-      "com.kobosh.wurstaddon.Wurstaddon"
+      "com.kobosh.koboshaddon.Koboshaddon"
     ]
   },
   "mixins": [
-    "wurstaddon.mixins.json",
+    "koboshaddon.mixins.json",
     {
-      "config": "wurstaddon.client.mixins.json",
+      "config": "koboshaddon.client.mixins.json",
       "environment": "client"
     }
   ],
