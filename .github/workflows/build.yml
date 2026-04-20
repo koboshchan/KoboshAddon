@@ -44,9 +44,9 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: WurstAddon-build
+        name: KoboshAddon-build
         path: |
-          build/libs/WurstAddon-*.jar
+          build/libs/KoboshAddon-*.jar
           wurst7-base/build/libs/Wurst-Client-*.jar
         retention-days: 30
 
