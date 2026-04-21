@@ -7,6 +7,7 @@
  */
 package com.kobosh.koboshaddon.client.command;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +25,9 @@ import net.wurstclient.command.CmdError;
 import net.wurstclient.command.CmdException;
 import net.wurstclient.command.CmdSyntaxError;
 import net.wurstclient.command.Command;
+import net.wurstclient.settings.EspStyleSetting.EspStyle;
 import net.wurstclient.util.ChatUtils;
+import net.wurstclient.util.ColorUtils;
 import net.wurstclient.util.json.JsonUtils;
 
 @DontBlock
@@ -34,7 +37,10 @@ public final class ViewLogsCmd extends Command
 	{
 		super("viewlogs", "View and highlight blocks from saved JSON logs.",
 			".viewlogs list [<page>]", ".viewlogs load <filename>",
-			".viewlogs clear", ".viewlogs help",
+			".viewlogs clear",
+			".viewlogs color <#RRGGBB>  - set highlight color",
+			".viewlogs style <boxes|lines|both>  - set highlight style",
+			".viewlogs help",
 			"Files are saved in '.minecraft/wurst/block_logs'.");
 	}
 	
@@ -56,6 +62,14 @@ public final class ViewLogsCmd extends Command
 			
 			case "clear":
 			clearLogs();
+			break;
+			
+			case "color":
+			setColor(args);
+			break;
+			
+			case "style":
+			setStyle(args);
 			break;
 			
 			case "help":
@@ -221,6 +235,63 @@ public final class ViewLogsCmd extends Command
 		
 		ChatUtils.message("Cleared all highlighted blocks from BlockLogger.");
 	}
+	
+	private void setColor(String[] args) throws CmdException
+	{
+		if(args.length < 2)
+			throw new CmdSyntaxError(
+				"Usage: .viewlogs color <#RRGGBB>");
+		
+		String hex = args[1];
+		if(!hex.startsWith("#"))
+			hex = "#" + hex;
+		
+		Color c = ColorUtils.tryParseHex(hex);
+		if(c == null)
+			throw new CmdSyntaxError(
+				"Invalid color '" + args[1] + "'. Use hex format, e.g. #00FF00.");
+		
+		AddonFeatureRegistry.blockLoggerHack.getColorSetting().setColor(c);
+		ChatUtils.message(
+			"Block highlight color set to " + hex.toUpperCase() + ".");
+	}
+	
+	private void setStyle(String[] args) throws CmdException
+	{
+		if(args.length < 2)
+			throw new CmdSyntaxError(
+				"Usage: .viewlogs style <boxes|lines|both>");
+		
+		EspStyle espStyle;
+		switch(args[1].toLowerCase())
+		{
+			case "box":
+			case "boxes":
+			espStyle = EspStyle.BOXES;
+			break;
+			
+			case "line":
+			case "lines":
+			espStyle = EspStyle.LINES;
+			break;
+			
+			case "both":
+			case "box+lines":
+			case "lines+box":
+			case "lines_and_boxes":
+			espStyle = EspStyle.LINES_AND_BOXES;
+			break;
+			
+			default:
+			throw new CmdSyntaxError(
+				"Invalid style '" + args[1] + "'. Use: boxes, lines, or both.");
+		}
+		
+		AddonFeatureRegistry.blockLoggerHack.getStyleSetting()
+			.setSelected(espStyle);
+		ChatUtils.message(
+			"Block highlight style set to '" + espStyle + "'.");
+	}
 
 	private void printViewLogsHelp()
 	{
@@ -228,5 +299,7 @@ public final class ViewLogsCmd extends Command
 		ChatUtils.message(".viewlogs list [page]");
 		ChatUtils.message(".viewlogs load <filename>");
 		ChatUtils.message(".viewlogs clear");
+		ChatUtils.message(".viewlogs color <#RRGGBB>");
+		ChatUtils.message(".viewlogs style <boxes|lines|both>");
 	}
 }
