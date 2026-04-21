@@ -11,8 +11,13 @@ import java.util.List;
 
 import net.minecraft.client.gui.screen.recipebook.RecipeResultCollection;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.recipe.RecipeDisplayEntry;
+import net.minecraft.recipe.display.RecipeDisplay;
+import net.minecraft.recipe.display.SlotDisplayContexts;
 import net.minecraft.registry.Registries;
 import net.minecraft.screen.CraftingScreenHandler;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.Identifier;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
@@ -118,53 +123,42 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 		List<RecipeResultCollection> recipeCollections =
 			MC.player.getRecipeBook().getOrderedResults();
 		
-		// Skip broken recipe display code for now
-		// TODO: Update to current Minecraft recipe API
-		/*
-		 * for(RecipeResultCollection collection : recipeCollections)
-		 * {
-		 * // Only get craftable recipes
-		 * List<RecipeDisplayEntry> craftableRecipes = collection
-		 * .filter(RecipeResultCollection.RecipeFilterMode.CRAFTABLE);
-		 *
-		 * for(RecipeDisplayEntry recipe : craftableRecipes)
-		 * {
-		 * RecipeDisplay recipeDisplay = recipe.display();
-		 * List<ItemStack> resultStacks = recipeDisplay.result()
-		 * .getStacks(SlotDisplayContexts.createParameters(MC.world));
-		 *
-		 * for(ItemStack resultStack : resultStacks)
-		 * {
-		 * Item resultItem = resultStack.getItem();
-		 * String itemName =
-		 * Registries.ITEM.getId(resultItem).toString();
-		 *
-		 * // Check if this item is in our crafting list
-		 * if(!itemNames.contains(itemName))
-		 * continue;
-		 *
-		 * if(debugMode.isChecked())
-		 * ChatUtils.message("Crafting " + resultStack.getCount()
-		 * + "x " + itemName);
-		 *
-		 * // TODO: Fix recipe API compatibility
-		 * // Click the recipe to set up crafting grid
-		 * // MC.interactionManager.clickRecipe(craftingHandler.syncId,
-		 * // recipe.id(), craftAll.isChecked());
-		 *
-		 * // Take the result from slot 0 (crafting output)
-		 * SlotActionType actionType = drop.isChecked()
-		 * ? SlotActionType.THROW : SlotActionType.QUICK_MOVE;
-		 *
-		 * MC.interactionManager.clickSlot(craftingHandler.syncId, 0,
-		 * 1, actionType, MC.player);
-		 *
-		 * // Small delay to prevent spamming
-		 * return;
-		 * }
-		 * }
-		 * }
-		 */
+		for(RecipeResultCollection collection : recipeCollections)
+		{
+			List<RecipeDisplayEntry> craftableRecipes = collection
+				.filter(RecipeResultCollection.RecipeFilterMode.CRAFTABLE);
+			
+			for(RecipeDisplayEntry recipe : craftableRecipes)
+			{
+				RecipeDisplay recipeDisplay = recipe.display();
+				List<ItemStack> resultStacks = recipeDisplay.result()
+					.getStacks(SlotDisplayContexts.createParameters(MC.world));
+				
+				for(ItemStack resultStack : resultStacks)
+				{
+					Item resultItem = resultStack.getItem();
+					String itemName =
+						Registries.ITEM.getId(resultItem).toString();
+					
+					if(!itemNames.contains(itemName))
+						continue;
+					
+					if(debugMode.isChecked())
+						ChatUtils.message("Crafting " + resultStack.getCount()
+							+ "x " + itemName);
+					
+					MC.interactionManager.clickRecipe(craftingHandler.syncId,
+						recipe.id(), craftAll.isChecked());
+					
+					SlotActionType actionType = drop.isChecked()
+						? SlotActionType.THROW : SlotActionType.QUICK_MOVE;
+					MC.interactionManager.clickSlot(craftingHandler.syncId, 0,
+						1, actionType, MC.player);
+					
+					return;
+				}
+			}
+		}
 	}
 	
 	public boolean isValidCraftingItem(Item item)
