@@ -7,9 +7,11 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +36,8 @@ import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.BlockSetting;
 import net.wurstclient.settings.ChunkAreaSetting;
+import net.wurstclient.settings.ColorSetting;
+import net.wurstclient.settings.EspStyleSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
 import net.wurstclient.util.ChatUtils;
@@ -47,6 +51,11 @@ import net.wurstclient.util.json.JsonUtils;
 public final class BlockLoggerHack extends Hack
 	implements UpdateListener, RenderListener
 {
+	private final EspStyleSetting style = new EspStyleSetting();
+	
+	private final ColorSetting color = new ColorSetting("Color",
+		"Color of the ESP highlight for found blocks.", new Color(0, 255, 0));
+	
 	private final BlockSetting block = new BlockSetting("Block",
 		"The type of block to search for.", "minecraft:diamond_ore", false);
 	private Block lastBlock;
@@ -67,6 +76,9 @@ public final class BlockLoggerHack extends Hack
 	private String currentFileName;
 	private Path logsFolder;
 	
+	// Blocks loaded from a log file via ViewLogsCmd
+	private List<Box> loadedBlockBoxes = List.of();
+	
 	// Search system (like SearchHack)
 	private final ChunkSearcherCoordinator coordinator =
 		new ChunkSearcherCoordinator(area);
@@ -79,6 +91,8 @@ public final class BlockLoggerHack extends Hack
 	{
 		super("BlockLogger");
 		setCategory(Category.RENDER);
+		addSetting(style);
+		addSetting(color);
 		addSetting(block);
 		addSetting(area);
 		addSetting(limit);
@@ -176,14 +190,28 @@ public final class BlockLoggerHack extends Hack
 	@Override
 	public void onRender(MatrixStack matrixStack, float partialTicks)
 	{
-		if(blockBoxes.isEmpty())
+		List<Box> allBoxes = new ArrayList<>(blockBoxes);
+		allBoxes.addAll(loadedBlockBoxes);
+		
+		if(allBoxes.isEmpty())
 			return;
-
-		int quadsColor = 0x4000FF00;
-		int linesColor = 0x8000FF00;
-		RenderUtils.drawSolidBoxes(matrixStack, blockBoxes, quadsColor, false);
-		RenderUtils.drawOutlinedBoxes(matrixStack, blockBoxes, linesColor,
-			false);
+		
+		if(style.hasBoxes())
+		{
+			int quadsColor = color.getColorI(0x40);
+			int linesColor = color.getColorI(0x80);
+			RenderUtils.drawSolidBoxes(matrixStack, allBoxes, quadsColor, false);
+			RenderUtils.drawOutlinedBoxes(matrixStack, allBoxes, linesColor,
+				false);
+		}
+		
+		if(style.hasLines())
+		{
+			int tracerColor = color.getColorI(0x80);
+			RenderUtils.drawTracers(matrixStack, partialTicks,
+				allBoxes.stream().map(Box::getCenter).toList(), tracerColor,
+				false);
+		}
 	}
 	
 	private void stopBuildingBuffer()
@@ -321,6 +349,7 @@ public final class BlockLoggerHack extends Hack
 	public void clearFoundBlocks()
 	{
 		loggedBlocks.clear();
+		loadedBlockBoxes = List.of();
 	}
 	
 	public void addBlocksFromJson(JsonObject jsonData)
@@ -342,10 +371,26 @@ public final class BlockLoggerHack extends Hack
 				loggedBlocks.add(pos);
 			}
 			
+			// Populate the rendered boxes from all loaded blocks so the
+			// highlight is visible immediately, even before the chunk searcher
+			// has had a chance to scan the area.
+			loadedBlockBoxes =
+				loggedBlocks.stream().map(Box::new).toList();
+			
 		}catch(Exception e)
 		{
 			ChatUtils
 				.error("Failed to load blocks from JSON: " + e.getMessage());
 		}
+	}
+	
+	public ColorSetting getColorSetting()
+	{
+		return color;
+	}
+	
+	public EspStyleSetting getStyleSetting()
+	{
+		return style;
 	}
 }

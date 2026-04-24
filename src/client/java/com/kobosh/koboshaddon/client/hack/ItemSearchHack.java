@@ -87,7 +87,6 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	private BlockPos currentTarget;
 	private long lastInteractionTime;
 	private boolean foundItem = false;
-	private boolean searchingInProgress = false;
 	
 	public ItemSearchHack()
 	{
@@ -114,7 +113,6 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		searchedChests.clear();
 		currentTarget = null;
 		foundItem = false;
-		searchingInProgress = false;
 		
 		ChatUtils.message(
 			"ItemSearch enabled. Searching for: " + targetItem.getValue());
@@ -131,7 +129,6 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 			MC.player.closeHandledScreen();
 		
 		currentTarget = null;
-		searchingInProgress = false;
 		
 		if(foundItem)
 			ChatUtils.message(
@@ -147,11 +144,10 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		if(MC.currentScreen instanceof HandledScreen<?> screen)
 		{
 			handleOpenChest(screen);
+			if(foundItem)
+				setEnabled(false);
 			return;
 		}
-		
-		// Reset interaction state when not in chest screen
-		searchingInProgress = false;
 		
 		// Check delay before next interaction
 		if(System.currentTimeMillis() - lastInteractionTime < delay.getValueI())
@@ -176,7 +172,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	
 	private void handleOpenChest(HandledScreen<?> screen)
 	{
-		if(!searchingInProgress || foundItem)
+		if(currentTarget == null || foundItem)
 			return;
 		
 		// Get the target item we're looking for
@@ -213,9 +209,8 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		{
 			foundItem = true;
 			ChatUtils.message("Found " + targetItem.getValue() + " at "
-				+ currentTarget.toShortString() + "!");
-			ChatUtils.message("Keeping chest open and disabling ItemSearch.");
-			setEnabled(false);
+				+ currentTarget.toShortString()
+				+ "! Keeping chest open and disabling ItemSearch.");
 		}else
 		{
 			// Item not found, close chest and mark as searched
@@ -322,12 +317,10 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		ActionResult result = im.interactBlock(player, hand, hitResult);
 		
 		// Swing hand if interaction was successful
-		// Swing hand if interaction was successful
 		if(result.isAccepted())
 			swingHand.swing(hand);
 		
-		// Mark that we're searching and set interaction time
-		searchingInProgress = true;
+		// Set interaction time
 		lastInteractionTime = System.currentTimeMillis();
 	}
 	

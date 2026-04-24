@@ -87,14 +87,15 @@ public final class NBTViewerHack extends Hack
 		}else
 			posLookingAt = null;
 		
-		// Select block and show NBT data
-		if(posLookingAt != null && MC.options.useKey.isPressed())
+		// Select block and show NBT data (wasPressed consumes one queued press per
+		// call, so NBT is fetched exactly once per right-click regardless of how
+		// long the button is held or whether a GUI opens afterward)
+		if(posLookingAt != null && MC.options.useKey.wasPressed())
 		{
 			selectedPos = posLookingAt;
 			showNBTData(selectedPos);
 		}
 		
-		// Close NBT view with ESC
 		// Close NBT view with ESC
 		if(showingNBT && InputUtil.isKeyPressed(MC.getWindow(),
 			GLFW.GLFW_KEY_ESCAPE))

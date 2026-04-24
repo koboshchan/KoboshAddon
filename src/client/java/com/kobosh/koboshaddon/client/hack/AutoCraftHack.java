@@ -9,15 +9,16 @@ package com.kobosh.koboshaddon.client.hack;
 
 import java.util.List;
 
+import net.minecraft.client.gui.screen.recipebook.RecipeResultCollection;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.RecipeDisplayEntry;
+import net.minecraft.recipe.display.RecipeDisplay;
 import net.minecraft.recipe.display.SlotDisplayContexts;
 import net.minecraft.registry.Registries;
 import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.context.ContextParameterMap;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -25,6 +26,7 @@ import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
 import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.util.ChatUtils;
+
 @SearchTags({"auto craft", "auto crafting", "crafting"})
 public final class AutoCraftHack extends Hack implements UpdateListener
 {
@@ -45,8 +47,6 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 	
 	private final CheckboxSetting debugMode = new CheckboxSetting("Debug mode",
 		"Shows debug messages about crafting attempts.", false);
-
-	private int craftCooldownTicks;
 	
 	public AutoCraftHack()
 	{
@@ -70,7 +70,6 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 	protected void onEnable()
 	{
 		EVENTS.add(UpdateListener.class, this);
-		craftCooldownTicks = 0;
 		
 		if(items.getItemNames().isEmpty())
 		{
@@ -88,7 +87,6 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 	protected void onDisable()
 	{
 		EVENTS.remove(UpdateListener.class, this);
-		craftCooldownTicks = 0;
 		
 		if(debugMode.isChecked())
 			ChatUtils.message("AutoCraft disabled.");
@@ -118,54 +116,45 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 	
 	private void attemptCrafting()
 	{
-		if(craftCooldownTicks > 0)
-		{
-			craftCooldownTicks--;
-			return;
-		}
-
 		CraftingScreenHandler craftingHandler =
 			(CraftingScreenHandler)MC.player.currentScreenHandler;
+		
 		List<String> itemNames = items.getItemNames();
-		ContextParameterMap slotContext =
-			SlotDisplayContexts.createParameters(MC.world);
-
-		for(var collection : MC.player.getRecipeBook().getOrderedResults())
+		List<RecipeResultCollection> recipeCollections =
+			MC.player.getRecipeBook().getOrderedResults();
+		
+		for(RecipeResultCollection collection : recipeCollections)
 		{
-			List<RecipeDisplayEntry> craftableRecipes = collection.filter(
-				net.minecraft.client.gui.screen.recipebook.RecipeResultCollection.RecipeFilterMode.CRAFTABLE);
-
+			List<RecipeDisplayEntry> craftableRecipes = collection
+				.filter(RecipeResultCollection.RecipeFilterMode.CRAFTABLE);
+			
 			for(RecipeDisplayEntry recipe : craftableRecipes)
 			{
-				List<ItemStack> resultStacks =
-					recipe.display().result().getStacks(slotContext);
-
+				RecipeDisplay recipeDisplay = recipe.display();
+				List<ItemStack> resultStacks = recipeDisplay.result()
+					.getStacks(SlotDisplayContexts.createParameters(MC.world));
+				
 				for(ItemStack resultStack : resultStacks)
 				{
-					if(resultStack.isEmpty())
-						continue;
-
+					Item resultItem = resultStack.getItem();
 					String itemName =
-						Registries.ITEM.getId(resultStack.getItem()).toString();
+						Registries.ITEM.getId(resultItem).toString();
+					
 					if(!itemNames.contains(itemName))
 						continue;
-
+					
+					if(debugMode.isChecked())
+						ChatUtils.message("Crafting " + resultStack.getCount()
+							+ "x " + itemName);
+					
 					MC.interactionManager.clickRecipe(craftingHandler.syncId,
 						recipe.id(), craftAll.isChecked());
-
+					
 					SlotActionType actionType = drop.isChecked()
-						? SlotActionType.THROW
-						: SlotActionType.QUICK_MOVE;
-					int button = drop.isChecked() ? 1 : 0;
-
+						? SlotActionType.THROW : SlotActionType.QUICK_MOVE;
 					MC.interactionManager.clickSlot(craftingHandler.syncId, 0,
-						button, actionType, MC.player);
-
-					if(debugMode.isChecked())
-						ChatUtils.message("AutoCraft crafted "
-							+ resultStack.getCount() + "x " + itemName);
-
-					craftCooldownTicks = craftAll.isChecked() ? 1 : 4;
+						1, actionType, MC.player);
+					
 					return;
 				}
 			}
