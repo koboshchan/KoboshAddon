@@ -193,7 +193,6 @@ public final class BedFinderHack extends Hack
 		if(getMatchingBlocksTask != null)
 			getMatchingBlocksTask.cancel(true);
 		getMatchingBlocksTask = null;
-		bedBoxes = List.of();
 		
 		bufferUpToDate = false;
 	}
