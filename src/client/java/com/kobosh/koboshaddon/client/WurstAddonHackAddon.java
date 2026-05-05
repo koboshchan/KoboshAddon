@@ -14,6 +14,7 @@ import com.kobosh.koboshaddon.client.hack.BookDupeHack;
 import com.kobosh.koboshaddon.client.hack.BookKickHack;
 import com.kobosh.koboshaddon.client.hack.DragonAimBotHack;
 import com.kobosh.koboshaddon.client.hack.ExplorationHack;
+import com.kobosh.koboshaddon.client.hack.EventReactorHack;
 import com.kobosh.koboshaddon.client.hack.FillerHack;
 import com.kobosh.koboshaddon.client.hack.GamemodeNotifierHack;
 import com.kobosh.koboshaddon.client.hack.GunAimBotHack;
@@ -46,6 +47,7 @@ public final class WurstAddonHackAddon implements Addon {
             new BookKickHack(),
             new DragonAimBotHack(),
             explorationHack,
+            new EventReactorHack(),
             new FillerHack(),
             new GamemodeNotifierHack(),
             new GunAimBotHack(),
