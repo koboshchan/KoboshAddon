@@ -2,6 +2,7 @@
   "description.wurst.hack.airwalk": "Lets you walk on a configurable Y level in mid-air.",
   "description.wurst.hack.antivanish": "Highlights and tracks entities that try to vanish from view.",
   "description.wurst.hack.autocraft": "Automatically crafts configured items while in a crafting screen.",
+  "description.wurst.hack.autolibrarian2": "Trains librarians using a refresh-trades plugin instead of breaking and replacing the lectern.",
   "description.wurst.hack.autotrader": "Automates villager trading actions for selected trades.",
   "description.wurst.hack.bedfinder": "Searches loaded chunks for bed blocks and highlights nearby matches.",
   "description.wurst.hack.blocklogger": "Logs and highlights matching blocks, with save/load support.",

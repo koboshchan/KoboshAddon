@@ -7,6 +7,7 @@ import com.kobosh.koboshaddon.client.command.ViewLogsCmd;
 import com.kobosh.koboshaddon.client.hack.AirWalkHack;
 import com.kobosh.koboshaddon.client.hack.AntiVanishHack;
 import com.kobosh.koboshaddon.client.hack.AutoCraftHack;
+import com.kobosh.koboshaddon.client.hack.AutoLibrarian2Hack;
 import com.kobosh.koboshaddon.client.hack.AutoTraderHack;
 import com.kobosh.koboshaddon.client.hack.BedFinderHack;
 import com.kobosh.koboshaddon.client.hack.BlockLoggerHack;
@@ -40,6 +41,7 @@ public final class WurstAddonHackAddon implements Addon {
             new AirWalkHack(),
             new AntiVanishHack(),
             autoCraftHack,
+            new AutoLibrarian2Hack(),
             new AutoTraderHack(),
             new BedFinderHack(),
             blockLoggerHack,
