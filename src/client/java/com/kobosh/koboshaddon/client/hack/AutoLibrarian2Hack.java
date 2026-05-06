@@ -75,7 +75,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		false);
 	
 	private final SliderSetting delay = new SliderSetting("Delay",
-		"Delay between actions in milliseconds.", 500, 50, 5000, 50,
+		"Delay between actions in milliseconds.", 50, 1, 100, 1,
 		ValueDisplay.INTEGER.withSuffix("ms"));
 	
 	private final SliderSetting range = new SliderSetting("Range",
