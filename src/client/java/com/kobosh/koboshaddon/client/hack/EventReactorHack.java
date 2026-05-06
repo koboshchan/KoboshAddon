@@ -57,11 +57,12 @@ public final class EventReactorHack extends Hack
 		"Minimum ticks between triggers (20 ticks = 1 second).", 20, 0, 200,
 		1, ValueDisplay.INTEGER);
 
+	private static final int CHECK_INTERVAL_TICKS = 200;
+
 	private int lastInventoryAmount;
-	private boolean wasInventoryFull;
-	private boolean wasChestOpen;
-	private boolean wasLowHealth;
+	private boolean pickupTriggered;
 	private boolean dropTriggered;
+	private int ticksUntilCheck;
 	private long lastTriggerMillis;
 
 	public EventReactorHack()
@@ -82,10 +83,9 @@ public final class EventReactorHack extends Hack
 	protected void onEnable()
 	{
 		lastInventoryAmount = getInventoryAmount();
-		wasInventoryFull = isInventoryFull();
-		wasChestOpen = isChestOpen();
-		wasLowHealth = isLowHealth();
+		pickupTriggered = false;
 		dropTriggered = false;
+		ticksUntilCheck = CHECK_INTERVAL_TICKS;
 		lastTriggerMillis = 0;
 
 		EVENTS.add(UpdateListener.class, this);
@@ -106,39 +106,22 @@ public final class EventReactorHack extends Hack
 			return;
 
 		int inventoryAmount = getInventoryAmount();
-		boolean inventoryFull = isInventoryFull();
-		boolean chestOpen = isChestOpen();
-		boolean lowHealth = isLowHealth();
-
-		switch(triggerEvent.getSelected())
-		{
-			case ITEM_PICKUP -> {
-				if(inventoryAmount > lastInventoryAmount)
-					trigger("item pickup");
-			}
-			case ITEM_DROP -> {
-				if(dropTriggered)
-					trigger("item drop");
-				dropTriggered = false;
-			}
-			case INVENTORY_FULL -> {
-				if(inventoryFull && !wasInventoryFull)
-					trigger("inventory full");
-			}
-			case OPEN_CHEST -> {
-				if(chestOpen && !wasChestOpen)
-					trigger("chest opened");
-			}
-			case LOW_HEALTH -> {
-				if(lowHealth && !wasLowHealth)
-					trigger("low health");
-			}
-		}
+		if(inventoryAmount > lastInventoryAmount)
+			pickupTriggered = true;
 
 		lastInventoryAmount = inventoryAmount;
-		wasInventoryFull = inventoryFull;
-		wasChestOpen = chestOpen;
-		wasLowHealth = lowHealth;
+
+		ticksUntilCheck--;
+		if(ticksUntilCheck > 0)
+			return;
+
+		ticksUntilCheck = CHECK_INTERVAL_TICKS;
+		if(!isConditionTrue(triggerEvent.getSelected()))
+			return;
+
+		trigger(getEventName(triggerEvent.getSelected()));
+		pickupTriggered = false;
+		dropTriggered = false;
 	}
 
 	@Override
@@ -170,6 +153,30 @@ public final class EventReactorHack extends Hack
 		}
 
 		lastTriggerMillis = System.currentTimeMillis();
+	}
+
+	private boolean isConditionTrue(TriggerEvent event)
+	{
+		return switch(event)
+		{
+			case ITEM_PICKUP -> pickupTriggered;
+			case ITEM_DROP -> dropTriggered;
+			case INVENTORY_FULL -> isInventoryFull();
+			case OPEN_CHEST -> isChestOpen();
+			case LOW_HEALTH -> isLowHealth();
+		};
+	}
+
+	private String getEventName(TriggerEvent event)
+	{
+		return switch(event)
+		{
+			case ITEM_PICKUP -> "item pickup";
+			case ITEM_DROP -> "item drop";
+			case INVENTORY_FULL -> "inventory full";
+			case OPEN_CHEST -> "chest opened";
+			case LOW_HEALTH -> "low health";
+		};
 	}
 
 	private void doSayInChat()
