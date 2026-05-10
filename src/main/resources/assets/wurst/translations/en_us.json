@@ -12,6 +12,7 @@
   "description.wurst.hack.boatnoclip": "Enables noclip-style movement controls while riding a boat.",
   "description.wurst.hack.bookdupe": "Attempts book-based duplication workflow used by some servers.",
   "description.wurst.hack.bookkick": "Sends oversized book payloads to kick vulnerable players/servers.",
+  "description.wurst.hack.cordtags": "Shows one selected coordinate (X, Y, or Z) with 1 decimal next to HealthTags.",
   "description.wurst.hack.dragonaimbot": "Aims at Ender Dragons with optional prediction and smoothing.",
   "description.wurst.hack.eventreactor": "Reacts to selected game events by chatting, running commands, or changing hack states.",
   "description.wurst.hack.exploration": "Automates movement and route progress for exploration tasks.",
