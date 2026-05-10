@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.kobosh.koboshaddon.client.hack.CordTagsHack;
 
-import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -17,7 +16,7 @@ import net.minecraft.text.Text;
 import net.wurstclient.WurstClient;
 import net.wurstclient.hack.Hack;
 
-@Mixin(value = EntityRenderer.class, priority = 500)
+@Mixin(targets = "net.minecraft.class_897", priority = 500)
 public abstract class EntityRendererMixin<T extends Entity, S extends EntityRenderState>
 {
 	private static final String[] NAME_FIELD_CANDIDATES =
@@ -25,7 +24,8 @@ public abstract class EntityRendererMixin<T extends Entity, S extends EntityRend
 	private static Field cachedNameField;
 
 	@Inject(
-		method = "extractRenderState(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/render/entity/state/EntityRenderState;F)V",
+		method = "method_62354(Lnet/minecraft/class_1297;Lnet/minecraft/class_10017;F)V",
+		remap = false,
 		at = @At("TAIL"))
 	private void addCoordToDisplayName(T entity, S state, float tickProgress,
 		CallbackInfo ci)
