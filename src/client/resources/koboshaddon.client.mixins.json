@@ -4,6 +4,7 @@
   "package": "com.kobosh.koboshaddon.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "EntityRenderStateAccessor",
     "EntityRendererMixin"
   ],
   "injectors": {
