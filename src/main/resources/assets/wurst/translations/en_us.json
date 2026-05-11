@@ -10,6 +10,7 @@
   "description.wurst.hack.bedfinder": "Searches loaded chunks for bed blocks and highlights nearby matches.",
   "description.wurst.hack.blocklogger": "Logs and highlights matching blocks, with save/load support.",
   "description.wurst.hack.boatnoclip": "Enables noclip-style movement controls while riding a boat.",
+  "description.wurst.hack.bowspam": "Charges your bow to minimum power and releases as fast as possible.",
   "description.wurst.hack.bookdupe": "Attempts book-based duplication workflow used by some servers.",
   "description.wurst.hack.bookkick": "Sends oversized book payloads to kick vulnerable players/servers.",
   "description.wurst.hack.cordtags": "Shows one selected coordinate (X, Y, or Z) with 1 decimal next to HealthTags.",

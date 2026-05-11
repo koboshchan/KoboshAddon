@@ -16,6 +16,7 @@ import com.kobosh.koboshaddon.client.hack.AutoTraderHack;
 import com.kobosh.koboshaddon.client.hack.BedFinderHack;
 import com.kobosh.koboshaddon.client.hack.BlockLoggerHack;
 import com.kobosh.koboshaddon.client.hack.BoatNoclipHack;
+import com.kobosh.koboshaddon.client.hack.BowSpamHack;
 import com.kobosh.koboshaddon.client.hack.BookDupeHack;
 import com.kobosh.koboshaddon.client.hack.BookKickHack;
 import com.kobosh.koboshaddon.client.hack.CordTagsHack;
@@ -60,6 +61,7 @@ public final class WurstAddonHackAddon implements Addon {
             new BedFinderHack(),
             blockLoggerHack,
             new BoatNoclipHack(),
+            new BowSpamHack(),
             new BookDupeHack(),
             new BookKickHack(),
             new CordTagsHack(),
