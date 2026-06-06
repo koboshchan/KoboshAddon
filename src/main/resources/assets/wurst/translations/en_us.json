@@ -32,5 +32,6 @@
   "description.wurst.hack.oresim": "Scans nearby chunks and renders ore blocks, with optional exposed-face filtering.",
   "description.wurst.hack.spawnerplayeresp": "Highlights player-related mob spawner activity.",
   "description.wurst.hack.teleport": "Teleports you to the block you are currently looking at.",
+  "description.wurst.hack.trialspawneresp": "Highlights nearby trial spawners with configurable cooldown filtering.",
   "description.wurst.hack.vehicleonehit": "Destroys boats and minecarts by sending extra hit packets."
 }
