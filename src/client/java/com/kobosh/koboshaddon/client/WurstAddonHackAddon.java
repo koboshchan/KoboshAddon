@@ -28,6 +28,7 @@ import com.kobosh.koboshaddon.client.hack.FillerHack;
 import com.kobosh.koboshaddon.client.hack.GamemodeNotifierHack;
 import com.kobosh.koboshaddon.client.hack.GhostModeHack;
 import com.kobosh.koboshaddon.client.hack.GunAimBotHack;
+import com.kobosh.koboshaddon.client.hack.HackList2Hack;
 import com.kobosh.koboshaddon.client.hack.InfiniteExplorerHack;
 import com.kobosh.koboshaddon.client.hack.InvisReminderHack;
 import com.kobosh.koboshaddon.client.hack.ItemSearchHack;
@@ -74,6 +75,7 @@ public final class WurstAddonHackAddon implements Addon {
             new GamemodeNotifierHack(),
             new GhostModeHack(),
             new GunAimBotHack(),
+            new HackList2Hack(),
             new InfiniteExplorerHack(),
             new InvisReminderHack(),
             new ItemSearchHack(),

@@ -22,6 +22,7 @@
   "description.wurst.hack.gamemodenotifier": "Notifies when your gamemode appears to change.",
   "description.wurst.hack.ghostmode": "Closes the death screen and keeps client-side control after death.",
   "description.wurst.hack.gunaimbot": "Aims ranged attacks at target entities with configurable behavior.",
+  "description.wurst.hack.hacklist2": "Shows a customizable list of active hacks on the screen with per-hack visibility toggles.",
   "description.wurst.hack.infiniteexplorer": "Continuously explores by extending exploration goals.",
   "description.wurst.hack.invisreminder": "Warns you when invisibility state needs attention.",
   "description.wurst.hack.itemsearch": "Searches for configured item targets in containers and results.",
