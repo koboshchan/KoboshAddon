@@ -38,6 +38,8 @@ import net.wurstclient.settings.CheckboxSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
 import net.wurstclient.settings.TextFieldSetting;
+import net.wurstclient.hacks.autolibrarian.BookOffer;
+import net.wurstclient.settings.BookOffersSetting;
 import net.wurstclient.util.ChatUtils;
 import net.wurstclient.util.InventoryUtils;
 import net.wurstclient.util.RotationUtils;
@@ -46,17 +48,17 @@ import net.wurstclient.util.RotationUtils;
 	"villager reroll", "librarian trainer"})
 public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 {
-	private final TextFieldSetting enchantment = new TextFieldSetting(
-		"Enchantment",
-		"The enchantment ID to look for (e.g. 'minecraft:mending').",
-		"minecraft:mending");
-	
-	private final SliderSetting level = new SliderSetting("Level",
-		"The required enchantment level.", 1, 1, 5, 1, ValueDisplay.INTEGER);
-	
-	private final SliderSetting maxPrice = new SliderSetting("Max price",
-		"Maximum emerald cost to accept for the enchanted book.", 64, 1, 64, 1,
-		ValueDisplay.INTEGER);
+	private final BookOffersSetting wantedBooks = new BookOffersSetting(
+		"Wanted books",
+		"A list of enchanted books that you want your librarians to sell.\n\n"
+			+ "AutoLibrarian2 will stop training the current villager"
+			+ " once it has learned to sell one of these books.\n\n"
+			+ "You can also set a maximum price for each book.",
+		"minecraft:depth_strider;3", "minecraft:efficiency;5",
+		"minecraft:feather_falling;4", "minecraft:fortune;3",
+		"minecraft:looting;3", "minecraft:mending;1", "minecraft:protection;4",
+		"minecraft:respiration;3", "minecraft:sharpness;5",
+		"minecraft:silk_touch;1", "minecraft:unbreaking;3");
 	
 	private final TextFieldSetting rerollItem = new TextFieldSetting(
 		"Reroll item",
@@ -104,9 +106,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	{
 		super("AutoLibrarian2");
 		setCategory(Category.OTHER);
-		addSetting(enchantment);
-		addSetting(level);
-		addSetting(maxPrice);
+		addSetting(wantedBooks);
 		addSetting(rerollItem);
 		addSetting(maxRerolls);
 		addSetting(lockInTrade);
@@ -357,10 +357,6 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	
 	private int findWantedBookIndex(TradeOfferList offers)
 	{
-		String wantedEnchant = enchantment.getValue().trim();
-		int wantedLevel = level.getValueI();
-		int wantedMaxPrice = maxPrice.getValueI();
-		
 		for(int i = 0; i < offers.size(); i++)
 		{
 			TradeOffer offer = offers.get(i);
@@ -381,13 +377,11 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 					.map(k -> k.getValue().toString()).orElse("");
 				int lvl = stored.getLevel(
 					(RegistryEntry<net.minecraft.enchantment.Enchantment>)entry);
+				int price = offer.getOriginalFirstBuyItem().getCount();
 				
-				if(key.equals(wantedEnchant) && lvl == wantedLevel)
-				{
-					int price = offer.getOriginalFirstBuyItem().getCount();
-					if(price <= wantedMaxPrice)
-						return i;
-				}
+				BookOffer bookOffer = new BookOffer(key, lvl, price);
+				if(bookOffer.isFullyValid() && wantedBooks.isWanted(bookOffer))
+					return i;
 			}
 		}
 		return -1;
