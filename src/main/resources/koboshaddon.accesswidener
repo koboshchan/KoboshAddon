@@ -1,0 +1,4 @@
+accessWidener	v1	named
+
+# Allow access to MinecraftClient.itemUseCooldown
+accessible	field	net/minecraft/client/MinecraftClient	itemUseCooldown	I

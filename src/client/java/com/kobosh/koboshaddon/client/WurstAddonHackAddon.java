@@ -40,6 +40,7 @@ import com.kobosh.koboshaddon.client.hack.OreSimHack;
 import com.kobosh.koboshaddon.client.hack.SpawnerPlayerEspHack;
 import com.kobosh.koboshaddon.client.hack.TeleportHack;
 import com.kobosh.koboshaddon.client.hack.TrialSpawnerEspHack;
+import com.kobosh.koboshaddon.client.hack.UseHack;
 import com.kobosh.koboshaddon.client.hack.VehicleOneHitHack;
 import net.wurstclient.addon.Addon;
 import net.wurstclient.command.Command;
@@ -87,6 +88,7 @@ public final class WurstAddonHackAddon implements Addon {
             new SpawnerPlayerEspHack(),
             new TeleportHack(),
             new TrialSpawnerEspHack(),
+            new UseHack(),
             new VehicleOneHitHack()
     };
 

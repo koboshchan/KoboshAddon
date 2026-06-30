@@ -27,6 +27,7 @@
       "environment": "client"
     }
   ],
+  "accessWidener": "koboshaddon.accesswidener",
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",

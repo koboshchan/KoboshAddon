@@ -13,6 +13,7 @@ base {
 
 loom {
     splitEnvironmentSourceSets()
+    accessWidenerPath = file("src/main/resources/koboshaddon.accesswidener")
 
     mods {
         "koboshaddon" {
