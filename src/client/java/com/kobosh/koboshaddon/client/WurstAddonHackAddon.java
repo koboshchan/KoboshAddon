@@ -23,6 +23,7 @@ import com.kobosh.koboshaddon.client.hack.CordTagsHack;
 import com.kobosh.koboshaddon.client.hack.CrosshairYFlyHack;
 import com.kobosh.koboshaddon.client.hack.DragonAimBotHack;
 import com.kobosh.koboshaddon.client.hack.ExplorationHack;
+import com.kobosh.koboshaddon.client.hack.FastExcavatorHack;
 import com.kobosh.koboshaddon.client.hack.EventReactorHack;
 import com.kobosh.koboshaddon.client.hack.FillerHack;
 import com.kobosh.koboshaddon.client.hack.GamemodeNotifierHack;
@@ -72,6 +73,7 @@ public final class WurstAddonHackAddon implements Addon {
             new DragonAimBotHack(),
             explorationHack,
             new EventReactorHack(),
+            new FastExcavatorHack(),
             new FillerHack(),
             new GamemodeNotifierHack(),
             new GhostModeHack(),
