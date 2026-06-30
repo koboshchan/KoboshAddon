@@ -27,7 +27,7 @@ import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
 import net.wurstclient.settings.ColorSetting;
-import net.wurstclient.settings.TextFieldSetting;
+import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.util.ChatUtils;
 import net.wurstclient.util.RenderUtils;
 
@@ -35,9 +35,9 @@ import net.wurstclient.util.RenderUtils;
 public final class AdvancedItemEspHack extends Hack
 	implements RenderListener, UpdateListener
 {
-	private final TextFieldSetting items = new TextFieldSetting("Items",
-		"Comma-separated item IDs.",
-		"minecraft:elytra,minecraft:totem_of_undying,minecraft:netherite_ingot,minecraft:diamond_block");
+	private final ItemListSetting items = new ItemListSetting("Items",
+		"Items that will be highlighted.",
+		"minecraft:elytra", "minecraft:totem_of_undying", "minecraft:netherite_ingot", "minecraft:diamond_block");
 
 	private final CheckboxSetting tracers =
 		new CheckboxSetting("Tracers", "Render tracers to matching items.", true);
@@ -47,8 +47,6 @@ public final class AdvancedItemEspHack extends Hack
 
 	private final ColorSetting color = new ColorSetting("Color",
 		"Color used for item boxes and tracers.", new Color(255, 25, 255));
-
-	private final Set<String> parsedItems = new HashSet<>();
 	private final Set<Integer> seenEntities = new HashSet<>();
 	private int count;
 
@@ -65,7 +63,6 @@ public final class AdvancedItemEspHack extends Hack
 	@Override
 	protected void onEnable()
 	{
-		parseItems();
 		seenEntities.clear();
 		EVENTS.add(RenderListener.class, this);
 		EVENTS.add(UpdateListener.class, this);
@@ -83,7 +80,6 @@ public final class AdvancedItemEspHack extends Hack
 	@Override
 	public void onUpdate()
 	{
-		parseItems();
 		if(MC.world == null)
 			return;
 		seenEntities.removeIf(id -> MC.world.getEntityById(id) == null);
@@ -103,7 +99,7 @@ public final class AdvancedItemEspHack extends Hack
 
 			Item item = itemEntity.getStack().getItem();
 			Identifier id = Registries.ITEM.getId(item);
-			if(id == null || !parsedItems.contains(id.toString()))
+			if(id == null || !items.getItemNames().contains(id.toString()))
 				continue;
 
 			if(chatFeedback.isChecked() && seenEntities.add(entity.getId()))
@@ -134,10 +130,5 @@ public final class AdvancedItemEspHack extends Hack
 		return isEnabled() ? getName() + " [" + count + "]" : getName();
 	}
 
-	private void parseItems()
-	{
-		parsedItems.clear();
-		Arrays.stream(items.getValue().split(",")).map(String::trim)
-			.filter(s -> !s.isEmpty()).forEach(parsedItems::add);
-	}
+
 }
