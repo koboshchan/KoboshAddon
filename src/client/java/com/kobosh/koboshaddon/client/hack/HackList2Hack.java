@@ -25,6 +25,10 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 	private final EnumSetting<Position> position = new EnumSetting<>("Position",
 		"Which side of the screen the HackList should be shown on.",
 		Position.values(), Position.RIGHT);
+
+	private final EnumSetting<VerticalPosition> verticalPosition = new EnumSetting<>("Vertical position",
+		"Whether the HackList should be shown at the top or bottom of the screen.",
+		VerticalPosition.values(), VerticalPosition.TOP);
 	
 	private final Map<Hack, CheckboxSetting> visibilitySettings =
 		new HashMap<>();
@@ -35,6 +39,7 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 		setCategory(Category.RENDER);
 		addSetting(color);
 		addSetting(position);
+		addSetting(verticalPosition);
 		
 		// Initial population of settings
 		updateSettings();
@@ -91,7 +96,9 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 		
 		TextRenderer tr = MC.textRenderer;
 		int textColor = color.getColorI();
-		int posY = 2;
+		int screenHeight = context.getScaledWindowHeight();
+		boolean isBottom = verticalPosition.getSelected() == VerticalPosition.BOTTOM;
+		int posY = isBottom ? screenHeight - 11 : 2;
 		
 		for(Hack hack : activeHax)
 		{
@@ -110,7 +117,10 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 			context.drawText(tr, s, posX + 1, posY + 1, 0xFF000000, false);
 			context.drawText(tr, s, posX, posY, textColor | 0xFF000000, false);
 			
-			posY += 9;
+			if(isBottom)
+				posY -= 9;
+			else
+				posY += 9;
 		}
 	}
 	
@@ -122,6 +132,25 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 		private final String name;
 		
 		private Position(String name)
+		{
+			this.name = name;
+		}
+		
+		@Override
+		public String toString()
+		{
+			return name;
+		}
+	}
+
+	public enum VerticalPosition
+	{
+		TOP("Top"),
+		BOTTOM("Bottom");
+		
+		private final String name;
+		
+		private VerticalPosition(String name)
 		{
 			this.name = name;
 		}
