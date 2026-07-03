@@ -7,8 +7,8 @@
  */
 package com.kobosh.koboshaddon.client.command;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.command.CmdError;
 import net.wurstclient.command.CmdException;
 import net.wurstclient.command.CmdSyntaxError;
@@ -52,8 +52,8 @@ public final class FlyToCmd extends Command implements UpdateListener
 		}
 		
 		// Validate Y coordinate bounds
-		int minY = MC.world.getBottomY();
-		int maxY = minY + MC.world.getHeight() - 1;
+		int minY = MC.level.getMinY();
+		int maxY = minY + MC.level.getHeight() - 1;
 		if(y < minY || y > maxY)
 		{
 			throw new CmdError("Y coordinate must be between "
@@ -78,8 +78,8 @@ public final class FlyToCmd extends Command implements UpdateListener
 			return;
 		}
 		
-		Vec3d playerPos = new Vec3d(MC.player.getX(), MC.player.getY(), MC.player.getZ());
-		Vec3d targetCenter = Vec3d.ofCenter(targetPos);
+		Vec3 playerPos = new Vec3(MC.player.getX(), MC.player.getY(), MC.player.getZ());
+		Vec3 targetCenter = Vec3.atCenterOf(targetPos);
 		
 		// Check if we've reached the target (within 2 blocks)
 		double distance = playerPos.distanceTo(targetCenter);
@@ -99,29 +99,29 @@ public final class FlyToCmd extends Command implements UpdateListener
 			Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
 		
 		// Reset all movement keys
-		MC.options.forwardKey.setPressed(false);
-		MC.options.backKey.setPressed(false);
-		MC.options.leftKey.setPressed(false);
-		MC.options.rightKey.setPressed(false);
-		MC.options.jumpKey.setPressed(false);
-		MC.options.sneakKey.setPressed(false);
+		MC.options.keyUp.setDown(false);
+		MC.options.keyDown.setDown(false);
+		MC.options.keyLeft.setDown(false);
+		MC.options.keyRight.setDown(false);
+		MC.options.keyJump.setDown(false);
+		MC.options.keyShift.setDown(false);
 		
 		// Face the target direction
 		if(horizontalDistance > 0.5)
 		{
 			WURST.getRotationFaker().faceVectorClient(targetCenter);
-			MC.options.forwardKey.setPressed(true);
+			MC.options.keyUp.setDown(true);
 		}
 		
 		// Handle vertical movement
 		if(deltaY > 1.5)
 		{
 			// Target is above, jump/fly up
-			MC.options.jumpKey.setPressed(true);
+			MC.options.keyJump.setDown(true);
 		}else if(deltaY < -1.5)
 		{
 			// Target is below, descend
-			MC.options.sneakKey.setPressed(true);
+			MC.options.keyShift.setDown(true);
 		}
 		
 		// Sprint for faster movement
@@ -139,12 +139,12 @@ public final class FlyToCmd extends Command implements UpdateListener
 		EVENTS.remove(UpdateListener.class, this);
 		
 		// Release all movement keys
-		MC.options.forwardKey.setPressed(false);
-		MC.options.backKey.setPressed(false);
-		MC.options.leftKey.setPressed(false);
-		MC.options.rightKey.setPressed(false);
-		MC.options.jumpKey.setPressed(false);
-		MC.options.sneakKey.setPressed(false);
+		MC.options.keyUp.setDown(false);
+		MC.options.keyDown.setDown(false);
+		MC.options.keyLeft.setDown(false);
+		MC.options.keyRight.setDown(false);
+		MC.options.keyJump.setDown(false);
+		MC.options.keyShift.setDown(false);
 		MC.player.setSprinting(false);
 		
 		ChatUtils.message("FlyTo stopped.");

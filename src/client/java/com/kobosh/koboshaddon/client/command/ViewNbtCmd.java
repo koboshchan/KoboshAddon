@@ -13,7 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import net.wurstclient.WurstClient;
 import net.wurstclient.command.CmdException;
 import net.wurstclient.command.Command;
@@ -33,7 +33,7 @@ public final class ViewNbtCmd extends Command
 		if(MC.player == null)
 			return;
 
-		ItemStack stack = MC.player.getMainHandStack();
+		ItemStack stack = MC.player.getMainHandItem();
 		if(stack.isEmpty())
 		{
 			ChatUtils.error("No item in main hand.");

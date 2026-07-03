@@ -13,13 +13,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.MobSpawnerBlockEntity;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.RenderListener;
@@ -85,20 +85,20 @@ public final class SpawnerPlayerEspHack extends Hack
 	private void checkSpawner(BlockEntity blockEntity)
 	{
 		// Only check spawner block entities
-		if(!(blockEntity instanceof MobSpawnerBlockEntity))
+		if(!(blockEntity instanceof SpawnerBlockEntity))
 			return;
 		
-		BlockPos pos = blockEntity.getPos();
+		BlockPos pos = blockEntity.getBlockPos();
 		
 		// Verify it's actually a spawner block (extra safety check)
-		if(!MC.world.getBlockState(pos).isOf(Blocks.SPAWNER))
+		if(!MC.level.getBlockState(pos).is(Blocks.SPAWNER))
 			return;
 		
 		try
 		{
 			// Get NBT data from the spawner
-			NbtCompound nbt =
-				blockEntity.createNbt(MC.world.getRegistryManager());
+			CompoundTag nbt =
+				blockEntity.saveWithFullMetadata(MC.level.registryAccess());
 			
 			if(nbt == null || nbt.isEmpty())
 				return;
@@ -125,10 +125,10 @@ public final class SpawnerPlayerEspHack extends Hack
 					// Try to get mob type from SpawnData
 					if(nbt.contains("SpawnData"))
 					{
-						NbtCompound spawnData = nbt.getCompound("SpawnData").orElse(null);
+						CompoundTag spawnData = nbt.getCompound("SpawnData").orElse(null);
 						if(spawnData != null && spawnData.contains("entity"))
 						{
-							NbtCompound entity =
+							CompoundTag entity =
 								spawnData.getCompound("entity").orElse(null);
 							if(entity != null && entity.contains("id"))
 							{
@@ -155,16 +155,16 @@ public final class SpawnerPlayerEspHack extends Hack
 	}
 	
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
 		if(activatedSpawners.isEmpty())
 			return;
 		
 		// Create boxes for all activated spawners
-		List<Box> boxes = new ArrayList<>();
+		List<AABB> boxes = new ArrayList<>();
 		for(BlockPos pos : activatedSpawners)
 		{
-			boxes.add(new Box(pos));
+			boxes.add(new AABB(pos));
 		}
 		
 		// Render boxes using ChestESP style
@@ -181,8 +181,8 @@ public final class SpawnerPlayerEspHack extends Hack
 		// Render tracers if enabled
 		if(style.hasLines())
 		{
-			List<net.minecraft.util.math.Vec3d> centers =
-				boxes.stream().map(Box::getCenter).toList();
+			List<net.minecraft.world.phys.Vec3> centers =
+				boxes.stream().map(AABB::getCenter).toList();
 			
 			int tracerColor = color.getColorI(0x80);
 			RenderUtils.drawTracers(matrixStack, partialTicks, centers,

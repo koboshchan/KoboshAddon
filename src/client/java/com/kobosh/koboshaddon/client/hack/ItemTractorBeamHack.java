@@ -7,8 +7,8 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.hack.Hack;
@@ -32,22 +32,22 @@ public final class ItemTractorBeamHack extends Hack
 	@Override
 	protected void onEnable()
 	{
-		if(MC.player == null || MC.player.networkHandler == null)
+		if(MC.player == null || MC.player.connection == null)
 		{
 			setEnabled(false);
 			return;
 		}
 
-		MC.player.networkHandler.sendPacket(new ClientCommandC2SPacket(MC.player,
-			ClientCommandC2SPacket.Mode.START_SPRINTING));
+		MC.player.connection.send(new ServerboundPlayerCommandPacket(MC.player,
+			ServerboundPlayerCommandPacket.Action.START_SPRINTING));
 
 		int count = multiplier.getValueI();
 		for(int i = 0; i < count; i++)
 			sendMovementPackets();
 
-		if(!MC.options.sprintKey.isPressed())
-			MC.player.networkHandler.sendPacket(new ClientCommandC2SPacket(
-				MC.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
+		if(!MC.options.keySprint.isDown())
+			MC.player.connection.send(new ServerboundPlayerCommandPacket(
+				MC.player, ServerboundPlayerCommandPacket.Action.STOP_SPRINTING));
 
 		ChatUtils.message("ItemTractorBeam fired " + count + " burst packets.");
 		setEnabled(false);
@@ -55,12 +55,12 @@ public final class ItemTractorBeamHack extends Hack
 
 	private void sendMovementPackets()
 	{
-		MC.player.networkHandler
-			.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(
+		MC.player.connection
+			.send(new ServerboundMovePlayerPacket.Pos(
 				MC.player.getX(), MC.player.getY() - 1.0E-14, MC.player.getZ(),
 				true, MC.player.horizontalCollision));
-		MC.player.networkHandler
-			.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(
+		MC.player.connection
+			.send(new ServerboundMovePlayerPacket.Pos(
 				MC.player.getX(), MC.player.getY() + 1.0E-14, MC.player.getZ(),
 				false, MC.player.horizontalCollision));
 	}

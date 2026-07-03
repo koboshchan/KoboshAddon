@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 
 import com.mojang.brigadier.suggestion.Suggestion;
 
-import net.minecraft.network.packet.c2s.play.RequestCommandCompletionsC2SPacket;
-import net.minecraft.network.packet.s2c.play.CommandSuggestionsS2CPacket;
+import net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket;
+import net.minecraft.network.protocol.game.ClientboundCommandSuggestionsPacket;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.ChatInputListener;
@@ -106,7 +106,7 @@ public final class AntiVanishHack extends Hack
 	private void checkLeaveMessages()
 	{
 		Map<UUID, String> oldPlayers = Map.copyOf(playerCache);
-		playerCache = MC.getNetworkHandler().getPlayerList().stream()
+		playerCache = MC.getConnection().getOnlinePlayers().stream()
 			.collect(Collectors.toMap(e -> e.getProfile().id(),
 				e -> e.getProfile().name()));
 		
@@ -128,8 +128,8 @@ public final class AntiVanishHack extends Hack
 	{
 		int id = random.nextInt(200);
 		completionIDs.add(id);
-		MC.getNetworkHandler()
-			.sendPacket(new RequestCommandCompletionsC2SPacket(id,
+		MC.getConnection()
+			.send(new ServerboundCommandSuggestionPacket(id,
 				command.getValue() + " "));
 	}
 	
@@ -139,7 +139,7 @@ public final class AntiVanishHack extends Hack
 		if(mode.getSelected() != Mode.REAL_JOIN_MESSAGE)
 			return;
 		
-		if(!(event.getPacket() instanceof CommandSuggestionsS2CPacket packet))
+		if(!(event.getPacket() instanceof ClientboundCommandSuggestionsPacket packet))
 			return;
 		
 		if(!completionIDs.contains(packet.id()))
@@ -147,7 +147,7 @@ public final class AntiVanishHack extends Hack
 		
 		var lastUsernames = completionPlayerCache.stream().toList();
 		
-		completionPlayerCache = packet.getSuggestions().getList().stream()
+		completionPlayerCache = packet.toSuggestions().getList().stream()
 			.map(Suggestion::getText).toList();
 		
 		if(lastUsernames.isEmpty())

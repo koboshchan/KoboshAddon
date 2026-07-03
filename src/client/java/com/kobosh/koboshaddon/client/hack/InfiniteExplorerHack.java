@@ -7,8 +7,8 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -166,12 +166,12 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 		currentTarget = null;
 		
 		// Release movement keys
-		MC.options.forwardKey.setPressed(false);
-		MC.options.backKey.setPressed(false);
-		MC.options.leftKey.setPressed(false);
-		MC.options.rightKey.setPressed(false);
-		MC.options.jumpKey.setPressed(false);
-		MC.options.sneakKey.setPressed(false);
+		MC.options.keyUp.setDown(false);
+		MC.options.keyDown.setDown(false);
+		MC.options.keyLeft.setDown(false);
+		MC.options.keyRight.setDown(false);
+		MC.options.keyJump.setDown(false);
+		MC.options.keyShift.setDown(false);
 	}
 	
 	@Override
@@ -196,12 +196,12 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 		if(isPaused)
 		{
 			// Reset all movement keys when paused
-			MC.options.forwardKey.setPressed(false);
-			MC.options.backKey.setPressed(false);
-			MC.options.leftKey.setPressed(false);
-			MC.options.rightKey.setPressed(false);
-			MC.options.jumpKey.setPressed(false);
-			MC.options.sneakKey.setPressed(false);
+			MC.options.keyUp.setDown(false);
+			MC.options.keyDown.setDown(false);
+			MC.options.keyLeft.setDown(false);
+			MC.options.keyRight.setDown(false);
+			MC.options.keyJump.setDown(false);
+			MC.options.keyShift.setDown(false);
 			return;
 		}
 		
@@ -229,8 +229,8 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 	
 	private void moveTowards(BlockPos target)
 	{
-		Vec3d playerPos = new Vec3d(MC.player.getX(), MC.player.getY(), MC.player.getZ());
-		Vec3d targetPos = Vec3d.ofCenter(target);
+		Vec3 playerPos = new Vec3(MC.player.getX(), MC.player.getY(), MC.player.getZ());
+		Vec3 targetPos = Vec3.atCenterOf(target);
 		
 		// Calculate horizontal distance and direction
 		double deltaX = targetPos.x - playerPos.x;
@@ -240,34 +240,34 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 			Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
 		
 		// Reset all movement keys
-		MC.options.forwardKey.setPressed(false);
-		MC.options.backKey.setPressed(false);
-		MC.options.leftKey.setPressed(false);
-		MC.options.rightKey.setPressed(false);
-		MC.options.jumpKey.setPressed(false);
-		MC.options.sneakKey.setPressed(false);
+		MC.options.keyUp.setDown(false);
+		MC.options.keyDown.setDown(false);
+		MC.options.keyLeft.setDown(false);
+		MC.options.keyRight.setDown(false);
+		MC.options.keyJump.setDown(false);
+		MC.options.keyShift.setDown(false);
 		
 		// Face the target direction
 		if(horizontalDistance > 0.5)
 		{
 			WURST.getRotationFaker().faceVectorClient(targetPos);
-			MC.options.forwardKey.setPressed(true);
+			MC.options.keyUp.setDown(true);
 		}
 		
 		// Handle vertical movement
 		if(deltaY > 1.0)
 		{
-			MC.options.jumpKey.setPressed(true);
+			MC.options.keyJump.setDown(true);
 		}else if(deltaY < -1.0)
 		{
-			MC.options.sneakKey.setPressed(true);
+			MC.options.keyShift.setDown(true);
 		}
 	}
 	
 	private boolean hasReachedTarget(BlockPos target)
 	{
-		Vec3d playerPos = new Vec3d(MC.player.getX(), MC.player.getY(), MC.player.getZ());
-		Vec3d targetPos = Vec3d.ofCenter(target);
+		Vec3 playerPos = new Vec3(MC.player.getX(), MC.player.getY(), MC.player.getZ());
+		Vec3 targetPos = Vec3.atCenterOf(target);
 		
 		double deltaX = targetPos.x - playerPos.x;
 		double deltaZ = targetPos.z - playerPos.z;
@@ -339,12 +339,12 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 		// Stop all movement when pausing
 		if(paused)
 		{
-			MC.options.forwardKey.setPressed(false);
-			MC.options.backKey.setPressed(false);
-			MC.options.leftKey.setPressed(false);
-			MC.options.rightKey.setPressed(false);
-			MC.options.jumpKey.setPressed(false);
-			MC.options.sneakKey.setPressed(false);
+			MC.options.keyUp.setDown(false);
+			MC.options.keyDown.setDown(false);
+			MC.options.keyLeft.setDown(false);
+			MC.options.keyRight.setDown(false);
+			MC.options.keyJump.setDown(false);
+			MC.options.keyShift.setDown(false);
 		}
 	}
 }

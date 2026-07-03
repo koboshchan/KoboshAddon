@@ -14,11 +14,11 @@ import java.util.Random;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -69,8 +69,8 @@ public final class ItemTpHack extends Hack implements UpdateListener
 			true);
 	
 	private long lastTeleportTime = 0;
-	private Vec3d positionBeforeTp = null;
-	private Vec3d expectedPosition = null;
+	private Vec3 positionBeforeTp = null;
+	private Vec3 expectedPosition = null;
 	private long teleportTimestamp = 0;
 	private boolean waitingForPushbackCheck = false;
 	private List<Entity> excludedItems = new ArrayList<>();
@@ -111,8 +111,8 @@ public final class ItemTpHack extends Hack implements UpdateListener
 	@Override
 	public void onUpdate()
 	{
-		ClientPlayerEntity player = MC.player;
-		if(player == null || MC.world == null)
+		LocalPlayer player = MC.player;
+		if(player == null || MC.level == null)
 			return;
 		
 		long currentTime = System.currentTimeMillis();
@@ -123,7 +123,7 @@ public final class ItemTpHack extends Hack implements UpdateListener
 			// Wait at least 2 ticks (100ms) for server to respond
 			if(currentTime - teleportTimestamp >= 100)
 			{
-				Vec3d currentPos = new Vec3d(player.getX(), player.getY(), player.getZ());
+				Vec3 currentPos = new Vec3(player.getX(), player.getY(), player.getZ());
 				
 				// Check if we got pushed back (within 0.5 blocks of original
 				// position)
@@ -212,7 +212,7 @@ public final class ItemTpHack extends Hack implements UpdateListener
 		// Check line of sight if enabled
 		if(checkLOS.isChecked())
 		{
-			Vec3d itemCenter = closestItem.getBoundingBox().getCenter();
+			Vec3 itemCenter = closestItem.getBoundingBox().getCenter();
 			if(!BlockUtils.hasLineOfSight(itemCenter))
 				return; // Skip items that aren't visible
 		}
@@ -223,7 +223,7 @@ public final class ItemTpHack extends Hack implements UpdateListener
 		if(blockCenter.isChecked())
 		{
 			// Use block center coordinates to avoid clipping
-			BlockPos itemBlockPos = BlockPos.ofFloored(closestItem.getX(),
+			BlockPos itemBlockPos = BlockPos.containing(closestItem.getX(),
 				closestItem.getY(), closestItem.getZ());
 			targetX = itemBlockPos.getX() + 0.5;
 			targetY = itemBlockPos.getY();
@@ -239,8 +239,8 @@ public final class ItemTpHack extends Hack implements UpdateListener
 		// Record position before teleport for pushback detection
 		if(checkPushback.isChecked())
 		{
-			positionBeforeTp = new Vec3d(player.getX(), player.getY(), player.getZ());
-			expectedPosition = new Vec3d(targetX, targetY, targetZ);
+			positionBeforeTp = new Vec3(player.getX(), player.getY(), player.getZ());
+			expectedPosition = new Vec3(targetX, targetY, targetZ);
 			teleportTimestamp = currentTime;
 			waitingForPushbackCheck = true;
 		}
@@ -249,17 +249,17 @@ public final class ItemTpHack extends Hack implements UpdateListener
 		if(directTeleport.isChecked())
 		{
 			// Teleport directly to calculated position
-			player.setPosition(targetX, targetY, targetZ);
+			player.setPos(targetX, targetY, targetZ);
 		}else
 		{
 			// Use TpAura-style random teleport near calculated position
 			double finalX = targetX + random.nextInt(3) * 2 - 2;
 			double finalZ = targetZ + random.nextInt(3) * 2 - 2;
-			player.setPosition(finalX, targetY, finalZ);
+			player.setPos(finalX, targetY, finalZ);
 			
 			// Update expected position for pushback detection
 			if(checkPushback.isChecked())
-				expectedPosition = new Vec3d(finalX, targetY, finalZ);
+				expectedPosition = new Vec3(finalX, targetY, finalZ);
 		}
 		
 		lastTeleportTime = currentTime;
@@ -269,25 +269,25 @@ public final class ItemTpHack extends Hack implements UpdateListener
 		{
 			ItemEntity itemEntity = (ItemEntity)closestItem;
 			ChatUtils.message(
-				"Teleported to " + itemEntity.getStack().getName().getString()
-					+ " (" + itemEntity.getStack().getCount() + ")");
+				"Teleported to " + itemEntity.getItem().getHoverName().getString()
+					+ " (" + itemEntity.getItem().getCount() + ")");
 		}
 	}
 	
-	private Entity findClosestItem(ClientPlayerEntity player,
-		boolean excludeBlocked)
+	private Entity findClosestItem(LocalPlayer player,
+                                        boolean excludeBlocked)
 	{
 		double rangeSq = Math.pow(range.getValue(), 2);
 		Stream<Entity> stream = StreamSupport
-			.stream(MC.world.getEntities().spliterator(), false)
+			.stream(MC.level.entitiesForRendering().spliterator(), false)
 			.filter(e -> e instanceof ItemEntity).filter(e -> !e.isRemoved())
-			.filter(e -> player.squaredDistanceTo(e) <= rangeSq);
+			.filter(e -> player.distanceToSqr(e) <= rangeSq);
 		
 		// Exclude items that caused pushback if requested
 		if(excludeBlocked && !excludedItems.isEmpty())
 			stream = stream.filter(e -> !excludedItems.contains(e));
 		
-		return stream.min(Comparator.comparingDouble(player::squaredDistanceTo))
+		return stream.min(Comparator.comparingDouble(player::distanceToSqr))
 			.orElse(null);
 	}
 	

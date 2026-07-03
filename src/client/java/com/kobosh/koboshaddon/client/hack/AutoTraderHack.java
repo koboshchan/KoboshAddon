@@ -7,15 +7,16 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.client.gui.screen.ingame.MerchantScreen;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.SelectMerchantTradeC2SPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.Identifier;
-import net.minecraft.village.TradeOffer;
-import net.minecraft.village.TradeOfferList;
+import net.minecraft.core.Holder;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -118,8 +119,8 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 	{
 		EVENTS.remove(UpdateListener.class, this);
 		
-		if(MC.currentScreen instanceof MerchantScreen)
-			MC.player.closeHandledScreen();
+		if(MC.gui.screen() instanceof MerchantScreen)
+			MC.player.closeContainer();
 		
 		tradesExecuted = 0;
 		tradingInProgress = false;
@@ -129,7 +130,7 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 	public void onUpdate()
 	{
 		// Only handle trading if a trade screen is manually opened
-		if(MC.currentScreen instanceof MerchantScreen tradeScreen)
+		if(MC.gui.screen() instanceof MerchantScreen tradeScreen)
 		{
 			handleTrading(tradeScreen);
 			return;
@@ -153,20 +154,20 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			if(!muteChatLogs.isChecked())
 				ChatUtils.message(
 					"Completed " + tradesExecuted + " trades with villager.");
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			tradesExecuted = 0;
 			return;
 		}
 		
-		TradeOfferList offers = tradeScreen.getScreenHandler().getRecipes();
-		TradeOffer targetOffer = findTargetTrade(offers, true);
+		MerchantOffers offers = tradeScreen.getMenu().getOffers();
+		MerchantOffer targetOffer = findTargetTrade(offers, true);
 		
-		if(targetOffer == null || targetOffer.isDisabled())
+		if(targetOffer == null || targetOffer.isOutOfStock())
 		{
 			if(containsTradeRerollPlugin.isChecked())
 			{
-				TradeOffer rerollOffer = findRerollTargetTrade(offers);
-				if(rerollOffer != null && !rerollOffer.isDisabled()
+				MerchantOffer rerollOffer = findRerollTargetTrade(offers);
+				if(rerollOffer != null && !rerollOffer.isOutOfStock()
 					&& hasEnoughItems(rerollOffer))
 				{
 					executeTrade(tradeScreen, rerollOffer, offers);
@@ -175,7 +176,7 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			}
 			
 			ChatUtils.warning("No suitable trades found with this villager.");
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			return;
 		}
 		
@@ -183,7 +184,7 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 		if(!hasEnoughItems(targetOffer))
 		{
 			ChatUtils.warning("Not enough items to complete trade.");
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			return;
 		}
 		
@@ -195,8 +196,8 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 		executeTrade(tradeScreen, targetOffer, offers);
 	}
 	
-	private TradeOffer findTargetTrade(TradeOfferList offers,
-		boolean filterDisabled)
+	private MerchantOffer findTargetTrade(MerchantOffers offers,
+                                          boolean filterDisabled)
 	{
 		Item targetItemType = getItemFromString(targetItem.getValue());
 		Item paymentItemType = getItemFromString(paymentItem.getValue());
@@ -206,32 +207,32 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 		
 		for(int i = 0; i < offers.size(); i++)
 		{
-			TradeOffer offer = offers.get(i);
+			MerchantOffer offer = offers.get(i);
 			
 			// Skip disabled trades if setting is enabled
 			if(filterDisabled && onlyUnlockedTrades.isChecked()
-				&& offer.isDisabled())
+				&& offer.isOutOfStock())
 				continue;
 			
 			// Check if this trade gives us our target item
-			ItemStack sellItem = offer.getSellItem();
+			ItemStack sellItem = offer.getResult();
 			boolean matchesTarget;
 			
 			if(requireExactItem.isChecked())
 				matchesTarget = sellItem.getItem() == targetItemType;
 			else
-				matchesTarget = sellItem.isOf(targetItemType);
+				matchesTarget = sellItem.is(targetItemType);
 			
 			if(!matchesTarget)
 				continue;
 			
 			// Check if we can pay for it with our payment item
-			ItemStack firstBuyItem = offer.getOriginalFirstBuyItem();
+			ItemStack firstBuyItem = offer.getBaseCostA();
 			
 			boolean canAfford = false;
 			
 			// Check first buy item
-			if(firstBuyItem.isOf(paymentItemType)
+			if(firstBuyItem.is(paymentItemType)
 				&& firstBuyItem.getCount() <= maxPrice.getValueI())
 			{
 				canAfford = true;
@@ -244,15 +245,15 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 		return null;
 	}
 	
-	private TradeOffer findRerollTargetTrade(TradeOfferList offers)
+	private MerchantOffer findRerollTargetTrade(MerchantOffers offers)
 	{
 		Item rerollItemType = getItemFromString(rerollTarget.getValue());
 		if(rerollItemType == null)
 			return null;
 		
-		for(TradeOffer offer : offers)
+		for(MerchantOffer offer : offers)
 		{
-			if(offer.getSellItem().isOf(rerollItemType))
+			if(offer.getResult().is(rerollItemType))
 				return offer;
 		}
 		
@@ -260,7 +261,7 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 	}
 	
 	private void executeTrade(MerchantScreen tradeScreen,
-		TradeOffer targetOffer, TradeOfferList offers)
+                              MerchantOffer targetOffer, MerchantOffers offers)
 	{
 		// Find the index of our target offer
 		int tradeIndex = -1;
@@ -277,10 +278,10 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			return;
 		
 		// Select the trade
-		tradeScreen.getScreenHandler().setRecipeIndex(tradeIndex);
-		tradeScreen.getScreenHandler().switchTo(tradeIndex);
-		MC.getNetworkHandler()
-			.sendPacket(new SelectMerchantTradeC2SPacket(tradeIndex));
+		tradeScreen.getMenu().setSelectionHint(tradeIndex);
+		tradeScreen.getMenu().tryMoveItems(tradeIndex);
+		MC.getConnection()
+			.send(new ServerboundSelectTradePacket(tradeIndex));
 		
 		// Update server sync timer after selection
 		if(lastServerSyncTime == 0)
@@ -291,8 +292,8 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			return;
 		
 		// Execute the trade by clicking the result slot
-		MC.interactionManager.clickSlot(tradeScreen.getScreenHandler().syncId,
-			2, 0, SlotActionType.PICKUP, MC.player);
+		MC.gameMode.handleContainerInput(tradeScreen.getMenu().containerId,
+			2, 0, ContainerInput.PICKUP, MC.player);
 		
 		tradesExecuted++;
 		tradingInProgress = true;
@@ -302,12 +303,12 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 		if(!muteChatLogs.isChecked())
 			ChatUtils.message("Executed trade " + tradesExecuted + "/"
 				+ maxTrades.getValueI() + " - Got "
-				+ targetOffer.getSellItem().getName().getString());
+				+ targetOffer.getResult().getHoverName().getString());
 	}
 	
-	private boolean hasEnoughItems(TradeOffer offer)
+	private boolean hasEnoughItems(MerchantOffer offer)
 	{
-		ItemStack firstBuyItem = offer.getOriginalFirstBuyItem();
+		ItemStack firstBuyItem = offer.getBaseCostA();
 		
 		// Check first item
 		if(!firstBuyItem.isEmpty())
@@ -328,7 +329,7 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			Identifier id = Identifier.tryParse(itemId);
 			if(id == null)
 				return null;
-			return Registries.ITEM.get(id);
+			return BuiltInRegistries.ITEM.get(id).map(Holder::value).orElse(null);
 		}catch(Exception e)
 		{
 			return null;

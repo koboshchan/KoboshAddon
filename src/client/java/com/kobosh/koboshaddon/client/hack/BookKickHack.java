@@ -13,8 +13,8 @@ import java.util.Optional;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.hack.Hack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.BookUpdateC2SPacket;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.protocol.game.ServerboundEditBookPacket;
 import net.wurstclient.util.ChatUtils;
 
 @SearchTags({"dupe", "book"})
@@ -30,14 +30,14 @@ public final class BookKickHack extends Hack
 	protected void onEnable()
 	{
 		assert MC.player != null;
-		if(!(MC.player.getMainHandStack()
+		if(!(MC.player.getMainHandItem()
 			.getItem() == Items.WRITABLE_BOOK))
 		{
 			ChatUtils.error("Please hold a writable book!");
 			setEnabled(false);
 			return;
 		}
-		MC.player.networkHandler.sendPacket(new BookUpdateC2SPacket(
+		MC.player.connection.send(new ServerboundEditBookPacket(
 			MC.player.getInventory().getSelectedSlot(), List.of(""),
 			Optional.of("The quick brown fox jumps over the lazy dog")));
 		setEnabled(false);

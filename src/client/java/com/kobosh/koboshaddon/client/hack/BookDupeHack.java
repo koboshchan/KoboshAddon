@@ -13,9 +13,9 @@ import java.util.Optional;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.hack.Hack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.BookUpdateC2SPacket;
-import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.protocol.game.ServerboundEditBookPacket;
+import net.minecraft.world.inventory.ContainerInput;
 import net.wurstclient.util.ChatUtils;
 
 @SearchTags({"dupe", "book"})
@@ -31,7 +31,7 @@ public final class BookDupeHack extends Hack
 	protected void onEnable()
 	{
 		assert MC.player != null;
-		if(!(MC.player.getMainHandStack().getItem() == Items.WRITABLE_BOOK))
+		if(!(MC.player.getMainHandItem().getItem() == Items.WRITABLE_BOOK))
 		{
 			ChatUtils.error("You need to hold a book and quill!");
 			setEnabled(false);
@@ -41,11 +41,11 @@ public final class BookDupeHack extends Hack
 		{
 			if(36 + MC.player.getInventory().getSelectedSlot() == i)
 				continue;
-			MC.interactionManager.clickSlot(
-				MC.player.currentScreenHandler.syncId, i, 1,
-				SlotActionType.THROW, MC.player);
+			MC.gameMode.handleContainerInput(
+				MC.player.containerMenu.containerId, i, 1,
+				ContainerInput.THROW, MC.player);
 		}
-		MC.player.networkHandler.sendPacket(new BookUpdateC2SPacket(
+		MC.player.connection.send(new ServerboundEditBookPacket(
 			MC.player.getInventory().getSelectedSlot(), List.of(""),
 			Optional.of("The quick brown fox jumps over the lazy dog")));
 		setEnabled(false);

@@ -7,8 +7,8 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.RightClickListener;
@@ -51,20 +51,20 @@ public final class UseHack extends Hack implements RightClickListener
 	@Override
 	public void onRightClick(RightClickEvent event)
 	{
-		if(MC.itemUseCooldown > 0)
+		if(MC.missTime > 0)
 			return;
 		
-		if(!MC.options.useKey.isPressed())
+		if(!MC.options.keyUse.isDown())
 			return;
 		
 		for(int i = 0; i < amount.getValueI(); i++)
 		{
-			if(MC.crosshairTarget.getType() == HitResult.Type.BLOCK)
+			if(MC.hitResult.getType() == BlockHitResult.Type.BLOCK)
 			{
-				BlockHitResult hitResult = (BlockHitResult)MC.crosshairTarget;
+				BlockHitResult hitResult = (BlockHitResult)MC.hitResult;
 				IMC.getInteractionManager().rightClickBlock(
-					hitResult.getBlockPos(), hitResult.getSide(),
-					hitResult.getPos());
+					hitResult.getBlockPos(), hitResult.getDirection(),
+					hitResult.getLocation());
 			}
 			
 			IMC.getInteractionManager().rightClickItem();

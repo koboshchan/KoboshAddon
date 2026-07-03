@@ -7,31 +7,32 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
+import net.minecraft.core.Holder;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.ChestBlockEntity;
-import net.minecraft.block.entity.HopperBlockEntity;
-import net.minecraft.block.entity.ShulkerBoxBlockEntity;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
+import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -125,8 +126,8 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		
 		// Only close screen if item was NOT found (so we keep chest open when
 		// item is found)
-		if(!foundItem && MC.currentScreen instanceof HandledScreen)
-			MC.player.closeHandledScreen();
+		if(!foundItem && MC.gui.screen() instanceof AbstractContainerScreen)
+			MC.player.closeContainer();
 		
 		currentTarget = null;
 		
@@ -141,7 +142,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	public void onUpdate()
 	{
 		// If we're currently viewing a chest screen, check its contents
-		if(MC.currentScreen instanceof HandledScreen<?> screen)
+		if(MC.gui.screen() instanceof AbstractContainerScreen<?> screen)
 		{
 			handleOpenChest(screen);
 			if(foundItem)
@@ -170,7 +171,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		interactWithChest();
 	}
 	
-	private void handleOpenChest(HandledScreen<?> screen)
+	private void handleOpenChest(AbstractContainerScreen<?> screen)
 	{
 		if(currentTarget == null || foundItem)
 			return;
@@ -186,9 +187,9 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		
 		// Check all slots in the chest for our target item
 		boolean itemFound = false;
-		for(Slot slot : screen.getScreenHandler().slots)
+		for(Slot slot : screen.getMenu().slots)
 		{
-			ItemStack stack = slot.getStack();
+			ItemStack stack = slot.getItem();
 			if(stack.isEmpty())
 				continue;
 			
@@ -196,7 +197,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 			if(requireExactMatch.isChecked())
 				matches = stack.getItem() == targetItemType;
 			else
-				matches = stack.isOf(targetItemType);
+				matches = stack.is(targetItemType);
 			
 			if(matches)
 			{
@@ -217,7 +218,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 			if(currentTarget != null)
 				searchedChests.add(currentTarget);
 			
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			currentTarget = null;
 			lastInteractionTime = System.currentTimeMillis();
 		}
@@ -225,19 +226,19 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	
 	private void findNextChest()
 	{
-		ClientPlayerEntity player = MC.player;
-		Vec3d playerPos = new Vec3d(player.getX(), player.getY(), player.getZ());
+		LocalPlayer player = MC.player;
+		Vec3 playerPos = new Vec3(player.getX(), player.getY(), player.getZ());
 		double rangeSq = range.getValueSq();
 		
 		Stream<BlockPos> stream = ChunkUtils.getLoadedBlockEntities()
-			.filter(this::isValidContainer).map(BlockEntity::getPos)
+			.filter(this::isValidContainer).map(BlockEntity::getBlockPos)
 			.filter(pos -> !searchedChests.contains(pos))
 			.filter(pos -> playerPos
-				.squaredDistanceTo(Vec3d.ofCenter(pos)) <= rangeSq);
+				.distanceToSqr(Vec3.atCenterOf(pos)) <= rangeSq);
 		
 		currentTarget = stream
 			.min(Comparator.comparingDouble(
-				pos -> playerPos.squaredDistanceTo(Vec3d.ofCenter(pos))))
+				pos -> playerPos.distanceToSqr(Vec3.atCenterOf(pos))))
 			.orElse(null);
 		
 		if(currentTarget != null)
@@ -259,7 +260,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		// Check for barrels if enabled
 		if(searchBarrels.isChecked())
 		{
-			Block block = be.getCachedState().getBlock();
+			Block block = be.getBlockState().getBlock();
 			if(block == Blocks.BARREL)
 				return true;
 		}
@@ -269,15 +270,15 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	
 	private String getChestTypeAt(BlockPos pos)
 	{
-		BlockEntity be = MC.world.getBlockEntity(pos);
+		BlockEntity be = MC.level.getBlockEntity(pos);
 		if(be instanceof ChestBlockEntity)
 			return "Chest";
 		if(be instanceof ShulkerBoxBlockEntity)
-			return "Shulker Box";
+			return "Shulker AABB";
 		if(be instanceof HopperBlockEntity)
 			return "Hopper";
 		
-		Block block = MC.world.getBlockState(pos).getBlock();
+		Block block = MC.level.getBlockState(pos).getBlock();
 		if(block == Blocks.BARREL)
 			return "Barrel";
 		
@@ -289,11 +290,11 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		if(currentTarget == null || MC.player == null)
 			return;
 		
-		ClientPlayerEntity player = MC.player;
-		ClientPlayerInteractionManager im = MC.interactionManager;
+		LocalPlayer player = MC.player;
+		MultiPlayerGameMode im = MC.gameMode;
 		
 		// Check if we're still in range
-		if(player.squaredDistanceTo(Vec3d.ofCenter(currentTarget)) > range
+		if(player.distanceToSqr(Vec3.atCenterOf(currentTarget)) > range
 			.getValueSq())
 		{
 			ChatUtils.warning("Chest at " + currentTarget.toShortString()
@@ -303,9 +304,9 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		}
 		
 		// Create hit result for the block
-		Vec3d blockCenter = Vec3d.ofCenter(currentTarget);
+		Vec3 blockCenter = Vec3.atCenterOf(currentTarget);
 		Direction side = Direction.UP; // Default to top face
-		Vec3d hitVec = blockCenter.add(0, 0.5, 0);
+		Vec3 hitVec = blockCenter.add(0, 0.5, 0);
 		BlockHitResult hitResult =
 			new BlockHitResult(hitVec, side, currentTarget, false);
 		
@@ -313,11 +314,11 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		faceTarget.face(blockCenter);
 		
 		// Right-click on the chest
-		Hand hand = Hand.MAIN_HAND;
-		ActionResult result = im.interactBlock(player, hand, hitResult);
+		InteractionHand hand = InteractionHand.MAIN_HAND;
+		InteractionResult result = im.useItemOn(player, hand, hitResult);
 		
 		// Swing hand if interaction was successful
-		if(result.isAccepted())
+		if(result.consumesAction())
 			swingHand.swing(hand);
 		
 		// Set interaction time
@@ -331,7 +332,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 			Identifier id = Identifier.tryParse(itemId);
 			if(id == null)
 				return null;
-			return Registries.ITEM.get(id);
+			return BuiltInRegistries.ITEM.get(id).map(Holder::value).orElse(null);
 		}catch(Exception e)
 		{
 			return null;

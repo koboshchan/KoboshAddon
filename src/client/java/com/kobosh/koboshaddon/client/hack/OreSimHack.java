@@ -13,14 +13,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.RenderListener;
@@ -82,7 +82,7 @@ public final class OreSimHack extends Hack
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.world == null)
+		if(MC.player == null || MC.level == null)
 			return;
 
 		if(--ticksUntilRescan > 0)
@@ -91,24 +91,24 @@ public final class OreSimHack extends Hack
 		ores.clear();
 		Set<BlockPos> found = new HashSet<>();
 		int blockRange = range.getValueI() * 16;
-		BlockPos center = MC.player.getBlockPos();
-		BlockPos min = center.add(-blockRange, -64, -blockRange);
-		BlockPos max = center.add(blockRange, 64, blockRange);
+		BlockPos center = MC.player.blockPosition();
+		BlockPos min = center.offset(-blockRange, -64, -blockRange);
+		BlockPos max = center.offset(blockRange, 64, blockRange);
 
-		for(BlockPos pos : BlockPos.iterate(min, max))
+		for(BlockPos pos : BlockPos.betweenClosed(min, max))
 		{
-			BlockState state = MC.world.getBlockState(pos);
+			BlockState state = MC.level.getBlockState(pos);
 			if(!isOre(state.getBlock()))
 				continue;
 			if(checkExposed.isChecked() && !hasExposedFace(pos))
 				continue;
-			if(found.add(pos.toImmutable()))
-				ores.add(pos.toImmutable());
+			if(found.add(pos.immutable()))
+				ores.add(pos.immutable());
 		}
 	}
 
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
 		if(ores.isEmpty())
 			return;
@@ -117,13 +117,13 @@ public final class OreSimHack extends Hack
 		int fillColor = color.getColorI(0x33);
 		for(BlockPos pos : ores)
 		{
-			Box box = new Box(pos);
+			AABB box = new AABB(pos);
 			RenderUtils.drawOutlinedBox(matrixStack, box, lineColor, false);
 			RenderUtils.drawSolidBox(matrixStack, box, fillColor, false);
 
 			if(tracers.isChecked())
 				RenderUtils.drawTracer(matrixStack, partialTicks,
-					Vec3d.ofCenter(pos), lineColor, false);
+					Vec3.atCenterOf(pos), lineColor, false);
 		}
 	}
 
@@ -136,7 +136,7 @@ public final class OreSimHack extends Hack
 	private boolean hasExposedFace(BlockPos pos)
 	{
 		for(Direction d : Direction.values())
-			if(!BlockUtils.isOpaqueFullCube(pos.offset(d)))
+			if(!BlockUtils.isOpaqueFullCube(pos.relative(d)))
 				return true;
 		return false;
 	}

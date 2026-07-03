@@ -7,9 +7,9 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.world.GameMode;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.world.level.GameType;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.PacketInputListener;
@@ -58,25 +58,25 @@ public final class GamemodeNotifierHack extends Hack
 	@Override
 	public void onReceivedPacket(PacketInputEvent event)
 	{
-		if(!(event.getPacket() instanceof PlayerListS2CPacket packet))
+		if(!(event.getPacket() instanceof ClientboundPlayerInfoUpdatePacket packet))
 			return;
 		
 		// Check if network handler is available
-		if(MC.getNetworkHandler() == null)
+		if(MC.getConnection() == null)
 			return;
 		
-		for(PlayerListS2CPacket.Entry entry : packet.getEntries())
+		for(ClientboundPlayerInfoUpdatePacket.Entry entry : packet.entries())
 		{
-			if(!packet.getActions()
-				.contains(PlayerListS2CPacket.Action.UPDATE_GAME_MODE))
+			if(!packet.actions()
+				.contains(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE))
 				continue;
 			
-			PlayerListEntry playerEntry =
-				MC.getNetworkHandler().getPlayerListEntry(entry.profileId());
+			PlayerInfo playerEntry =
+				MC.getConnection().getPlayerInfo(entry.profileId());
 			if(playerEntry == null)
 				continue;
 			
-			GameMode newGameMode = entry.gameMode();
+			GameType newGameMode = entry.gameMode();
 			if(playerEntry.getGameMode() == newGameMode)
 				continue;
 			
@@ -90,7 +90,7 @@ public final class GamemodeNotifierHack extends Hack
 		}
 	}
 	
-	private boolean shouldNotify(GameMode gameMode)
+	private boolean shouldNotify(GameType gameMode)
 	{
 		return switch(gameMode)
 		{
@@ -101,7 +101,7 @@ public final class GamemodeNotifierHack extends Hack
 		};
 	}
 	
-	private String getGameModeName(GameMode gameMode)
+	private String getGameModeName(GameType gameMode)
 	{
 		return switch(gameMode)
 		{

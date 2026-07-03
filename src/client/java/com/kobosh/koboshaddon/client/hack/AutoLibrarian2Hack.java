@@ -11,25 +11,25 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.stream.StreamSupport;
 
-import net.minecraft.client.gui.screen.ingame.MerchantScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.SelectMerchantTradeC2SPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.village.TradeOffer;
-import net.minecraft.village.TradeOfferList;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Holder;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -97,8 +97,8 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	}
 	
 	private State state = State.FIND_VILLAGER;
-	private VillagerEntity targetVillager;
-	private final HashSet<VillagerEntity> experiencedVillagers = new HashSet<>();
+	private Villager targetVillager;
+	private final HashSet<Villager> experiencedVillagers = new HashSet<>();
 	private int rerollCount;
 	private long lastActionTime;
 	
@@ -131,8 +131,8 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	{
 		EVENTS.remove(UpdateListener.class, this);
 		
-		if(MC.currentScreen instanceof MerchantScreen)
-			MC.player.closeHandledScreen();
+		if(MC.gui.screen() instanceof MerchantScreen)
+			MC.player.closeContainer();
 		
 		targetVillager = null;
 		experiencedVillagers.clear();
@@ -141,7 +141,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.world == null)
+		if(MC.player == null || MC.level == null)
 			return;
 		
 		switch(state)
@@ -160,17 +160,17 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		double rangeSq = range.getValueSq();
 		
 		targetVillager = StreamSupport
-			.stream(MC.world.getEntities().spliterator(), false)
-			.filter(e -> e instanceof VillagerEntity)
-			.map(e -> (VillagerEntity)e)
+			.stream(MC.level.entitiesForRendering().spliterator(), false)
+			.filter(e -> e instanceof Villager)
+			.map(e -> (Villager)e)
 			.filter(e -> !e.isRemoved() && e.getHealth() > 0)
-			.filter(e -> MC.player.squaredDistanceTo(e) <= rangeSq)
+			.filter(e -> MC.player.distanceToSqr(e) <= rangeSq)
 			.filter(e -> e.getVillagerData().profession()
-				.matchesKey(VillagerProfession.LIBRARIAN))
+				.is(VillagerProfession.LIBRARIAN))
 			.filter(e -> e.getVillagerData().level() == 1)
 			.filter(e -> !experiencedVillagers.contains(e))
 			.min(Comparator.comparingDouble(
-				e -> MC.player.squaredDistanceTo(e)))
+				e -> MC.player.distanceToSqr(e)))
 			.orElse(null);
 		
 		if(targetVillager == null)
@@ -192,7 +192,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	private void openTradeScreen()
 	{
 		// Already open
-		if(MC.currentScreen instanceof MerchantScreen)
+		if(MC.gui.screen() instanceof MerchantScreen)
 		{
 			state = State.CHECK_TRADES;
 			return;
@@ -209,7 +209,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 			return;
 		}
 		
-		if(MC.player.squaredDistanceTo(targetVillager) > range.getValueSq())
+		if(MC.player.distanceToSqr(targetVillager) > range.getValueSq())
 		{
 			ChatUtils.error(
 				"AutoLibrarian2: Villager moved out of range. Retrying...");
@@ -219,23 +219,23 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		}
 		
 		// Build hit result pointing at villager's bounding box centre
-		Box box = targetVillager.getBoundingBox();
-		Vec3d eyesPos = RotationUtils.getEyesPos();
-		Vec3d center = box.getCenter();
-		Vec3d hitVec = box.raycast(eyesPos, center).orElse(center);
+		AABB box = targetVillager.getBoundingBox();
+		Vec3 eyesPos = RotationUtils.getEyesPos();
+		Vec3 center = box.getCenter();
+		Vec3 hitVec = box.clip(eyesPos, center).orElse(center);
 		EntityHitResult hitResult =
 			new EntityHitResult(targetVillager, hitVec);
 		
 		// Interact with the villager
-		MC.interactionManager.interactEntityAtLocation(MC.player, targetVillager,
-			hitResult, Hand.MAIN_HAND);
+		MC.gameMode.interact(MC.player, targetVillager,
+			hitResult, InteractionHand.MAIN_HAND);
 		
 		lastActionTime = System.currentTimeMillis();
 	}
 	
 	private void checkTrades()
 	{
-		if(!(MC.currentScreen instanceof MerchantScreen tradeScreen))
+		if(!(MC.gui.screen() instanceof MerchantScreen tradeScreen))
 		{
 			// Screen closed unexpectedly, re-open
 			state = State.OPEN_TRADE_SCREEN;
@@ -244,19 +244,19 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		}
 		
 		// Check villager experience — if > 0 we can't retrain it
-		int xp = tradeScreen.getScreenHandler().getExperience();
+		int xp = tradeScreen.getMenu().getTraderXp();
 		if(xp > 0)
 		{
 			ChatUtils.warning("AutoLibrarian2: Villager is already"
 				+ " experienced, skipping.");
 			experiencedVillagers.add(targetVillager);
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			targetVillager = null;
 			state = State.FIND_VILLAGER;
 			return;
 		}
 		
-		TradeOfferList offers = tradeScreen.getScreenHandler().getRecipes();
+		MerchantOffers offers = tradeScreen.getMenu().getOffers();
 		
 		// Check if we have the wanted book
 		int bookIndex = findWantedBookIndex(offers);
@@ -272,7 +272,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 				lockInTrade(tradeScreen, offers);
 			}
 			
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			state = State.DONE;
 			return;
 		}
@@ -282,7 +282,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		{
 			ChatUtils.warning("AutoLibrarian2: Max rerolls (" + maxRerolls.getValueI()
 				+ ") reached without finding wanted book.");
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			setEnabled(false);
 			return;
 		}
@@ -293,42 +293,42 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	
 	private void buyReroll()
 	{
-		if(!(MC.currentScreen instanceof MerchantScreen tradeScreen))
+		if(!(MC.gui.screen() instanceof MerchantScreen tradeScreen))
 		{
 			state = State.OPEN_TRADE_SCREEN;
 			lastActionTime = System.currentTimeMillis();
 			return;
 		}
 		
-		TradeOfferList offers = tradeScreen.getScreenHandler().getRecipes();
+		MerchantOffers offers = tradeScreen.getMenu().getOffers();
 		int rerollIndex = findRerollItemIndex(offers);
 		
 		if(rerollIndex < 0)
 		{
 			ChatUtils.error("AutoLibrarian2: Could not find reroll item '"
 				+ rerollItem.getValue() + "' in villager's trades.");
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			setEnabled(false);
 			return;
 		}
 		
-		TradeOffer offer = offers.get(rerollIndex);
+		MerchantOffer offer = offers.get(rerollIndex);
 		if(!hasEnoughItems(offer))
 		{
 			ChatUtils.error("AutoLibrarian2: Not enough items to buy reroll"
 				+ " item.");
-			MC.player.closeHandledScreen();
+			MC.player.closeContainer();
 			setEnabled(false);
 			return;
 		}
 		
 		// Select and execute the reroll trade
-		tradeScreen.getScreenHandler().setRecipeIndex(rerollIndex);
-		tradeScreen.getScreenHandler().switchTo(rerollIndex);
-		MC.getNetworkHandler()
-			.sendPacket(new SelectMerchantTradeC2SPacket(rerollIndex));
-		MC.interactionManager.clickSlot(tradeScreen.getScreenHandler().syncId,
-			2, 0, SlotActionType.PICKUP, MC.player);
+		tradeScreen.getMenu().setSelectionHint(rerollIndex);
+		tradeScreen.getMenu().tryMoveItems(rerollIndex);
+		MC.getConnection()
+			.send(new ServerboundSelectTradePacket(rerollIndex));
+		MC.gameMode.handleContainerInput(tradeScreen.getMenu().containerId,
+			2, 0, ContainerInput.PICKUP, MC.player);
 		
 		rerollCount++;
 		
@@ -337,7 +337,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 				+ rerollCount + "/" + maxRerolls.getValueI() + ").");
 		
 		// Close and wait for plugin to reset trades
-		MC.player.closeHandledScreen();
+		MC.player.closeContainer();
 		state = State.WAIT_FOR_REOPEN;
 		lastActionTime = System.currentTimeMillis();
 	}
@@ -355,29 +355,29 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	
 	// ─────────────────── helpers ───────────────────
 	
-	private int findWantedBookIndex(TradeOfferList offers)
+	private int findWantedBookIndex(MerchantOffers offers)
 	{
 		for(int i = 0; i < offers.size(); i++)
 		{
-			TradeOffer offer = offers.get(i);
-			if(offer.isDisabled())
+			MerchantOffer offer = offers.get(i);
+			if(offer.isOutOfStock())
 				continue;
 			
-			ItemStack stack = offer.getSellItem();
-			if(!stack.isOf(Items.ENCHANTED_BOOK))
+			ItemStack stack = offer.getResult();
+			if(!stack.is(Items.ENCHANTED_BOOK))
 				continue;
 			
-			ItemEnchantmentsComponent stored = stack.getOrDefault(
-				DataComponentTypes.STORED_ENCHANTMENTS,
-				ItemEnchantmentsComponent.DEFAULT);
+			ItemEnchantments stored = stack.getOrDefault(
+				DataComponents.STORED_ENCHANTMENTS,
+				ItemEnchantments.EMPTY);
 			
-			for(RegistryEntry<?> entry : stored.getEnchantments())
+			for(Holder<?> entry : stored.keySet())
 			{
-				String key = entry.getKey()
-					.map(k -> k.getValue().toString()).orElse("");
+				String key = entry.unwrapKey()
+					.map(k -> k.identifier().toString()).orElse("");
 				int lvl = stored.getLevel(
-					(RegistryEntry<net.minecraft.enchantment.Enchantment>)entry);
-				int price = offer.getOriginalFirstBuyItem().getCount();
+					(Holder<net.minecraft.world.item.enchantment.Enchantment>)entry);
+				int price = offer.getBaseCostA().getCount();
 				
 				BookOffer bookOffer = new BookOffer(key, lvl, price);
 				if(bookOffer.isFullyValid() && wantedBooks.isWanted(bookOffer))
@@ -387,7 +387,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		return -1;
 	}
 	
-	private int findRerollItemIndex(TradeOfferList offers)
+	private int findRerollItemIndex(MerchantOffers offers)
 	{
 		Item rerollItemType = getItemFromString(rerollItem.getValue());
 		if(rerollItemType == null)
@@ -395,38 +395,38 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		
 		for(int i = 0; i < offers.size(); i++)
 		{
-			if(offers.get(i).getSellItem().isOf(rerollItemType))
+			if(offers.get(i).getResult().is(rerollItemType))
 				return i;
 		}
 		return -1;
 	}
 	
-	private void lockInTrade(MerchantScreen tradeScreen, TradeOfferList offers)
+	private void lockInTrade(MerchantScreen tradeScreen, MerchantOffers offers)
 	{
 		if(offers.isEmpty())
 			return;
 		
-		tradeScreen.getScreenHandler().setRecipeIndex(0);
-		tradeScreen.getScreenHandler().switchTo(0);
-		MC.getNetworkHandler()
-			.sendPacket(new SelectMerchantTradeC2SPacket(0));
-		MC.interactionManager.clickSlot(tradeScreen.getScreenHandler().syncId,
-			2, 0, SlotActionType.PICKUP, MC.player);
+		tradeScreen.getMenu().setSelectionHint(0);
+		tradeScreen.getMenu().tryMoveItems(0);
+		MC.getConnection()
+			.send(new ServerboundSelectTradePacket(0));
+		MC.gameMode.handleContainerInput(tradeScreen.getMenu().containerId,
+			2, 0, ContainerInput.PICKUP, MC.player);
 		
 		if(!muteChatLogs.isChecked())
 			ChatUtils.message("AutoLibrarian2: Locked in trade.");
 	}
 	
-	private boolean hasEnoughItems(TradeOffer offer)
+	private boolean hasEnoughItems(MerchantOffer offer)
 	{
-		ItemStack first = offer.getOriginalFirstBuyItem();
+		ItemStack first = offer.getBaseCostA();
 		if(!first.isEmpty())
 		{
 			if(InventoryUtils.count(first.getItem()) < first.getCount())
 				return false;
 		}
 		
-		var secondOpt = offer.getSecondBuyItem();
+		var secondOpt = offer.getItemCostB();
 		if(secondOpt.isPresent())
 		{
 			ItemStack second = secondOpt.get().itemStack();
@@ -445,7 +445,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 			Identifier id = Identifier.tryParse(itemId);
 			if(id == null)
 				return null;
-			return Registries.ITEM.get(id);
+			return BuiltInRegistries.ITEM.get(id).map(Holder::value).orElse(null);
 		}catch(Exception e)
 		{
 			return null;

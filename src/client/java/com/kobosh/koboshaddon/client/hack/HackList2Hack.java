@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.wurstclient.Category;
 import net.wurstclient.WurstClient;
 import net.wurstclient.events.GUIRenderListener;
@@ -76,7 +76,7 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 	}
 	
 	@Override
-	public void onRenderGUI(DrawContext context, float partialTicks)
+	public void onRenderGUI(GuiGraphicsExtractor context, float partialTicks)
 	{
 		// Refresh settings in case new hacks were added by other addons
 		if(visibilitySettings.size() < WurstClient.INSTANCE.getHax().countHax() - 1)
@@ -94,9 +94,9 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 		if(activeHax.isEmpty())
 			return;
 		
-		TextRenderer tr = MC.textRenderer;
+		Font tr = MC.font;
 		int textColor = color.getColorI();
-		int screenHeight = context.getScaledWindowHeight();
+		int screenHeight = context.guiHeight();
 		boolean isBottom = verticalPosition.getSelected() == VerticalPosition.BOTTOM;
 		int posY = isBottom ? screenHeight - 11 : 2;
 		
@@ -109,13 +109,13 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 				posX = 2;
 			else
 			{
-				int screenWidth = context.getScaledWindowWidth();
-				int stringWidth = tr.getWidth(s);
+				int screenWidth = context.guiWidth();
+				int stringWidth = tr.width(s);
 				posX = screenWidth - stringWidth - 2;
 			}
 			
-			context.drawText(tr, s, posX + 1, posY + 1, 0xFF000000, false);
-			context.drawText(tr, s, posX, posY, textColor | 0xFF000000, false);
+			context.text(tr, s, posX + 1, posY + 1, 0xFF000000, false);
+			context.text(tr, s, posX, posY, textColor | 0xFF000000, false);
 			
 			if(isBottom)
 				posY -= 9;

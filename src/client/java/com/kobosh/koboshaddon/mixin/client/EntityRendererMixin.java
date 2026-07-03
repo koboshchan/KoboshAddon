@@ -7,10 +7,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.kobosh.koboshaddon.client.hack.CordTagsHack;
 
-import net.minecraft.client.render.entity.state.EntityRenderState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.Component;
 import net.wurstclient.WurstClient;
 import net.wurstclient.hack.Hack;
 
@@ -27,14 +27,14 @@ public abstract class EntityRendererMixin<T extends Entity, S extends EntityRend
 		EntityRenderStateAccessor accessor = (EntityRenderStateAccessor)state;
 		if(accessor.koboshaddon$getNameTag() == null)
 			return;
-		if(!(entity instanceof PlayerEntity player))
+		if(!(entity instanceof Player player))
 			return;
 
 		Hack hack = WurstClient.INSTANCE.getHax().getHackByName("CordTags");
 		if(!(hack instanceof CordTagsHack cordTags) || !cordTags.isEnabled())
 			return;
 
-		Text nameTag = accessor.koboshaddon$getNameTag();
+		Component nameTag = accessor.koboshaddon$getNameTag();
 		accessor.koboshaddon$setNameTag(cordTags.addCoord(player, nameTag.copy()));
 	}
 }

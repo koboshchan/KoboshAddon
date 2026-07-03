@@ -7,7 +7,7 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.client.gui.screen.DeathScreen;
+import net.minecraft.client.gui.screens.DeathScreen;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -44,7 +44,7 @@ public final class GhostModeHack extends Hack implements UpdateListener
 		active = false;
 		ChatUtils.message("Ghost mode disabled.");
 		if(MC.player != null)
-			MC.player.requestRespawn();
+			MC.player.respawn();
 	}
 
 	@Override
@@ -53,9 +53,9 @@ public final class GhostModeHack extends Hack implements UpdateListener
 		if(MC.player == null)
 			return;
 
-		if(MC.currentScreen instanceof DeathScreen)
+		if(MC.gui.screen() instanceof DeathScreen)
 		{
-			MC.setScreen(null);
+			MC.gui.setScreen(null);
 			if(!active)
 			{
 				active = true;
@@ -70,6 +70,6 @@ public final class GhostModeHack extends Hack implements UpdateListener
 			MC.player.setHealth(20.0F);
 
 		if(fullFood.isChecked())
-			MC.player.getHungerManager().setFoodLevel(20);
+			MC.player.getFoodData().setFoodLevel(20);
 	}
 }

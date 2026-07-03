@@ -4,14 +4,14 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.block.TrialSpawnerBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.TrialSpawnerBlockEntity;
-import net.minecraft.block.enums.TrialSpawnerState;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.TrialSpawnerBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
+import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerState;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.CameraTransformViewBobbingListener;
@@ -87,16 +87,16 @@ public final class TrialSpawnerEspHack extends Hack
 		if(!(be instanceof TrialSpawnerBlockEntity))
 			return;
 		
-		BlockPos pos = be.getPos();
-		var state = MC.world.getBlockState(pos);
+		BlockPos pos = be.getBlockPos();
+		var state = MC.level.getBlockState(pos);
 		
-		if(!state.isOf(Blocks.TRIAL_SPAWNER))
+		if(!state.is(Blocks.TRIAL_SPAWNER))
 			return;
 		
 		if(ignoreCooldown.isChecked())
 		{
 			TrialSpawnerState spawnerState =
-				state.get(TrialSpawnerBlock.TRIAL_SPAWNER_STATE);
+				state.getValue(TrialSpawnerBlock.STATE);
 			if(spawnerState == TrialSpawnerState.COOLDOWN)
 				return;
 		}
@@ -105,14 +105,14 @@ public final class TrialSpawnerEspHack extends Hack
 	}
 	
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
 		if(spawnerPoses.isEmpty())
 			return;
 		
-		List<Box> boxes = new ArrayList<>();
+		List<AABB> boxes = new ArrayList<>();
 		for(BlockPos pos : spawnerPoses)
-			boxes.add(new Box(pos));
+			boxes.add(new AABB(pos));
 		
 		if(style.hasBoxes())
 		{
@@ -127,7 +127,7 @@ public final class TrialSpawnerEspHack extends Hack
 		{
 			int tracerColor = color.getColorI(0x80);
 			RenderUtils.drawTracers(matrixStack, partialTicks,
-				boxes.stream().map(Box::getCenter).toList(), tracerColor,
+				boxes.stream().map(AABB::getCenter).toList(), tracerColor,
 				false);
 		}
 	}

@@ -11,14 +11,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -74,26 +74,26 @@ public final class StripAuraHack extends Hack implements UpdateListener
 			return;
 		}
 
-		if(MC.world == null || MC.player == null)
+		if(MC.level == null || MC.player == null)
 			return;
 
 		int axeSlot = getAxeSlot();
 		if(axeSlot == -1)
 			return;
 
-		Vec3d eyesVec = RotationUtils.getEyesPos();
-		BlockPos eyesBlock = BlockPos.ofFloored(eyesVec);
+		Vec3 eyesVec = RotationUtils.getEyesPos();
+		BlockPos eyesBlock = BlockPos.containing(eyesVec);
 		double rangeSq = Math.pow(range.getValue(), 2);
 		int blockRange = range.getValueCeil();
 
 		List<BlockPos> logs = BlockUtils.getAllInBoxStream(eyesBlock, blockRange)
-			.filter(pos -> pos.getSquaredDistance(eyesVec) <= rangeSq)
+			.filter(pos -> pos.distToCenterSqr(eyesVec) <= rangeSq)
 			.filter(BlockUtils::canBeClicked)
 			.filter(pos -> {
-				BlockState state = MC.world.getBlockState(pos);
-				return AxeItem.STRIPPED_BLOCKS.containsKey(state.getBlock());
+				BlockState state = MC.level.getBlockState(pos);
+				return AxeItem.STRIPPABLES.containsKey(state.getBlock());
 			})
-			.sorted(Comparator.comparingDouble(pos -> pos.getSquaredDistance(eyesVec)))
+			.sorted(Comparator.comparingDouble(pos -> pos.distToCenterSqr(eyesVec)))
 			.collect(Collectors.toList());
 
 		if(logs.isEmpty())
@@ -106,9 +106,9 @@ public final class StripAuraHack extends Hack implements UpdateListener
 		for(int i = 0; i < stripCount; i++)
 		{
 			BlockPos pos = logs.get(i);
-			BlockHitResult hitResult = new BlockHitResult(Vec3d.ofCenter(pos), Direction.UP, pos, false);
+			BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
 			InteractionSimulator.rightClickBlock(hitResult);
-			MC.player.swingHand(Hand.MAIN_HAND);
+			MC.player.swing(InteractionHand.MAIN_HAND);
 		}
 
 		MC.player.getInventory().setSelectedSlot(oldSlot);
@@ -117,10 +117,10 @@ public final class StripAuraHack extends Hack implements UpdateListener
 
 	private int getAxeSlot()
 	{
-		net.minecraft.entity.player.PlayerInventory inventory = MC.player.getInventory();
+		net.minecraft.world.entity.player.Inventory inventory = MC.player.getInventory();
 		for(int slot = 0; slot < 9; slot++)
 		{
-			ItemStack stack = inventory.getStack(slot);
+			ItemStack stack = inventory.getItem(slot);
 			if(stack.getItem() instanceof AxeItem)
 				return slot;
 		}

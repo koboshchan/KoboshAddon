@@ -7,12 +7,12 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.item.BlockItem;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -43,7 +43,7 @@ public final class AutoStaircaseHack extends Hack implements UpdateListener
 	{
 		EVENTS.add(UpdateListener.class, this);
 		if(MC.player != null)
-			MC.player.setVelocity(0, 0, 0);
+			MC.player.setDeltaMovement(0, 0, 0);
 	}
 
 	@Override
@@ -56,10 +56,10 @@ public final class AutoStaircaseHack extends Hack implements UpdateListener
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.world == null || MC.interactionManager == null)
+		if(MC.player == null || MC.level == null || MC.gameMode == null)
 			return;
 
-		if(!(MC.player.getMainHandStack().getItem() instanceof BlockItem))
+		if(!(MC.player.getMainHandItem().getItem() instanceof BlockItem))
 		{
 			releaseMovementKeys();
 			return;
@@ -71,35 +71,35 @@ public final class AutoStaircaseHack extends Hack implements UpdateListener
 			return;
 		}
 
-		Direction dir = MC.player.getMovementDirection();
-		Vec3d eyes = MC.player.getEyePos();
-		Vec3d lookTarget = eyes.add(dir.getOffsetX() * viewAngle.getValue(), 0,
-			dir.getOffsetZ() * viewAngle.getValue());
+		Direction dir = MC.player.getMotionDirection();
+		Vec3 eyes = MC.player.getEyePosition();
+		Vec3 lookTarget = eyes.add(dir.getStepX() * viewAngle.getValue(), 0,
+			dir.getStepZ() * viewAngle.getValue());
 		WURST.getRotationFaker().faceVectorClient(lookTarget);
 
-		if(!MC.player.isOnGround())
+		if(!MC.player.onGround())
 			return;
 
-		if(MC.options.backKey.isPressed())
+		if(MC.options.keyDown.isDown())
 		{
 			releaseMovementKeys();
-			MC.player.setVelocity(0, 0, 0);
+			MC.player.setDeltaMovement(0, 0, 0);
 			return;
 		}
 
-		BlockPos ahead = MC.player.getBlockPos().offset(dir);
-		if(MC.world.getBlockState(ahead).isReplaceable())
+		BlockPos ahead = MC.player.blockPosition().relative(dir);
+		if(MC.level.getBlockState(ahead).canBeReplaced())
 		{
-			MC.options.forwardKey.setPressed(false);
-			MC.options.jumpKey.setPressed(false);
-			BlockHitResult hit = new BlockHitResult(Vec3d.ofCenter(ahead),
+			MC.options.keyUp.setDown(false);
+			MC.options.keyJump.setDown(false);
+			BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(ahead),
 				Direction.DOWN, ahead, false);
-			MC.interactionManager.interactBlock(MC.player, Hand.MAIN_HAND, hit);
-			MC.player.swingHand(Hand.MAIN_HAND);
+			MC.gameMode.useItemOn(MC.player, InteractionHand.MAIN_HAND, hit);
+			MC.player.swing(InteractionHand.MAIN_HAND);
 		}else
 		{
-			MC.options.forwardKey.setPressed(true);
-			MC.options.jumpKey.setPressed(true);
+			MC.options.keyUp.setDown(true);
+			MC.options.keyJump.setDown(true);
 		}
 	}
 
@@ -107,7 +107,7 @@ public final class AutoStaircaseHack extends Hack implements UpdateListener
 	{
 		if(MC.options == null)
 			return;
-		MC.options.forwardKey.setPressed(false);
-		MC.options.jumpKey.setPressed(false);
+		MC.options.keyUp.setDown(false);
+		MC.options.keyJump.setDown(false);
 	}
 }

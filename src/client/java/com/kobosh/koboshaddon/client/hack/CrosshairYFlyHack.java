@@ -7,8 +7,8 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -55,51 +55,51 @@ public final class CrosshairYFlyHack extends Hack implements UpdateListener
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.world == null)
+		if(MC.player == null || MC.level == null)
 			return;
 
-		PlayerEntity target = getCrosshairClosestPlayer();
+		Player target = getCrosshairClosestPlayer();
 		if(target == null)
 			return;
 
 		double deltaY = target.getY() - MC.player.getY();
 		if(Math.abs(deltaY) <= deadzone.getValue())
 		{
-			MC.player.setVelocity(MC.player.getVelocity().x, 0,
-				MC.player.getVelocity().z);
+			MC.player.setDeltaMovement(MC.player.getDeltaMovement().x, 0,
+				MC.player.getDeltaMovement().z);
 			return;
 		}
 
 		double ySpeed = verticalSpeed.getValue() * Math.signum(deltaY);
-		MC.player.setVelocity(MC.player.getVelocity().x, ySpeed,
-			MC.player.getVelocity().z);
+		MC.player.setDeltaMovement(MC.player.getDeltaMovement().x, ySpeed,
+			MC.player.getDeltaMovement().z);
 	}
 
-	private PlayerEntity getCrosshairClosestPlayer()
+	private Player getCrosshairClosestPlayer()
 	{
-		Vec3d eyes = MC.player.getEyePos();
-		Vec3d look = MC.player.getRotationVec(1.0F).normalize();
+		Vec3 eyes = MC.player.getEyePosition();
+		Vec3 look = MC.player.getViewVector(1.0F).normalize();
 		double rangeSq = range.getValueSq();
 
-		PlayerEntity best = null;
+		Player best = null;
 		double bestAngle = Double.MAX_VALUE;
 		double bestDistanceSq = Double.MAX_VALUE;
 
-		for(PlayerEntity candidate : MC.world.getPlayers())
+		for(Player candidate : MC.level.players())
 		{
 			if(candidate == MC.player || !candidate.isAlive() || candidate.isRemoved())
 				continue;
 
-			Vec3d targetPos = new Vec3d(candidate.getX(),
-				candidate.getY() + candidate.getHeight() * 0.5,
+			Vec3 targetPos = new Vec3(candidate.getX(),
+				candidate.getY() + candidate.getBbHeight() * 0.5,
 				candidate.getZ());
-			Vec3d toTarget = targetPos.subtract(eyes);
-			double distanceSq = toTarget.lengthSquared();
+			Vec3 toTarget = targetPos.subtract(eyes);
+			double distanceSq = toTarget.lengthSqr();
 			if(distanceSq > rangeSq || distanceSq <= 1.0E-8)
 				continue;
 
-			Vec3d dir = toTarget.normalize();
-			double dot = look.dotProduct(dir);
+			Vec3 dir = toTarget.normalize();
+			double dot = look.dot(dir);
 			dot = Math.max(-1.0, Math.min(1.0, dot));
 			double angle = Math.acos(dot);
 

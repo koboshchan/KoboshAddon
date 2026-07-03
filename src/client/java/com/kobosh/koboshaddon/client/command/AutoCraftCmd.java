@@ -9,10 +9,10 @@ package com.kobosh.koboshaddon.client.command;
 
 import com.kobosh.koboshaddon.client.AddonFeatureRegistry;
 import com.kobosh.koboshaddon.client.hack.AutoCraftHack;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.wurstclient.command.CmdError;
 import net.wurstclient.command.CmdException;
 import net.wurstclient.command.CmdSyntaxError;
@@ -121,7 +121,7 @@ public final class AutoCraftCmd extends Command
 				return false;
 			
 			// Check if item exists in registry
-			return Registries.ITEM.containsId(id);
+			return BuiltInRegistries.ITEM.containsKey(id);
 		}catch(Exception e)
 		{
 			return false;
@@ -140,7 +140,7 @@ public final class AutoCraftCmd extends Command
 		if(MC.player == null)
 			return;
 		
-		ItemStack heldStack = MC.player.getMainHandStack();
+		ItemStack heldStack = MC.player.getMainHandItem();
 		if(heldStack.isEmpty())
 		{
 			ChatUtils.error("Please hold an item to add it to AutoCraft.");
@@ -148,7 +148,7 @@ public final class AutoCraftCmd extends Command
 		}
 		
 		Item item = heldStack.getItem();
-		String itemName = Registries.ITEM.getId(item).toString();
+		String itemName = BuiltInRegistries.ITEM.getKey(item).toString();
 		
 		AutoCraftHack autoCraft = AddonFeatureRegistry.autoCraftHack;
 		autoCraft.addItem(itemName);

@@ -9,15 +9,15 @@ package com.kobosh.koboshaddon.client.hack;
 
 import org.lwjgl.glfw.GLFW;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.events.GUIRenderListener;
 import net.wurstclient.events.RenderListener;
@@ -75,14 +75,14 @@ public final class NBTViewerHack extends Hack
 	private void handleBlockSelection()
 	{
 		// Get block player is looking at
-		if(MC.crosshairTarget instanceof BlockHitResult)
+		if(MC.hitResult instanceof BlockHitResult)
 		{
-			posLookingAt = ((BlockHitResult)MC.crosshairTarget).getBlockPos();
+			posLookingAt = ((BlockHitResult)MC.hitResult).getBlockPos();
 			
 			// Offset if sneaking (to select air blocks or adjacent positions)
-			if(MC.options.sneakKey.isPressed())
+			if(MC.options.keyShift.isDown())
 				posLookingAt = posLookingAt
-					.offset(((BlockHitResult)MC.crosshairTarget).getSide());
+					.relative(((BlockHitResult)MC.hitResult).getDirection());
 			
 		}else
 			posLookingAt = null;
@@ -90,14 +90,14 @@ public final class NBTViewerHack extends Hack
 		// Select block and show NBT data (wasPressed consumes one queued press per
 		// call, so NBT is fetched exactly once per right-click regardless of how
 		// long the button is held or whether a GUI opens afterward)
-		if(posLookingAt != null && MC.options.useKey.wasPressed())
+		if(posLookingAt != null && MC.options.keyUse.consumeClick())
 		{
 			selectedPos = posLookingAt;
 			showNBTData(selectedPos);
 		}
 		
 		// Close NBT view with ESC
-		if(showingNBT && InputUtil.isKeyPressed(MC.getWindow(),
+		if(showingNBT && InputConstants.isKeyDown(MC.getWindow(),
 			GLFW.GLFW_KEY_ESCAPE))
 		{
 			showingNBT = false;
@@ -111,13 +111,13 @@ public final class NBTViewerHack extends Hack
 		try
 		{
 			// Get block entity at position
-			BlockEntity blockEntity = MC.world.getBlockEntity(pos);
+			BlockEntity blockEntity = MC.level.getBlockEntity(pos);
 			
 			if(blockEntity != null)
 			{
 				// Get NBT data from block entity
-				NbtCompound nbt =
-					blockEntity.createNbt(MC.world.getRegistryManager());
+				CompoundTag nbt =
+					blockEntity.saveWithFullMetadata(MC.level.registryAccess());
 				
 				if(nbt != null && !nbt.isEmpty())
 				{
@@ -156,7 +156,7 @@ public final class NBTViewerHack extends Hack
 		}
 	}
 	
-	private String formatNBTData(NbtCompound nbt, BlockPos pos)
+	private String formatNBTData(CompoundTag nbt, BlockPos pos)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("Block Position: ").append(pos.toShortString()).append("\n");
@@ -196,7 +196,7 @@ public final class NBTViewerHack extends Hack
 	}
 	
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
 		int black = 0x80000000;
 		int gray = 0x26404040;
@@ -206,7 +206,7 @@ public final class NBTViewerHack extends Hack
 		// Highlight selected block
 		if(selectedPos != null)
 		{
-			Box box = new Box(selectedPos).contract(1 / 16.0);
+			AABB box = new AABB(selectedPos).deflate(1 / 16.0);
 			RenderUtils.drawOutlinedBox(matrixStack, box, black, false);
 			RenderUtils.drawSolidBox(matrixStack, box, blue, false);
 		}
@@ -214,14 +214,14 @@ public final class NBTViewerHack extends Hack
 		// Highlight block looking at
 		if(posLookingAt != null && !posLookingAt.equals(selectedPos))
 		{
-			Box box = new Box(posLookingAt).contract(1 / 16.0);
+			AABB box = new AABB(posLookingAt).deflate(1 / 16.0);
 			RenderUtils.drawOutlinedBox(matrixStack, box, black, false);
 			RenderUtils.drawSolidBox(matrixStack, box, gray, false);
 		}
 	}
 	
 	@Override
-	public void onRenderGUI(DrawContext context, float partialTicks)
+	public void onRenderGUI(GuiGraphicsExtractor context, float partialTicks)
 	{
 		String message;
 		
@@ -239,41 +239,41 @@ public final class NBTViewerHack extends Hack
 		else
 			message = "Look at a block and right-click to view its NBT data.";
 		
-		TextRenderer tr = MC.textRenderer;
-		int msgWidth = tr.getWidth(message);
+		Font tr = MC.font;
+		int msgWidth = tr.width(message);
 		
-		int msgX1 = context.getScaledWindowWidth() / 2 - msgWidth / 2;
+		int msgX1 = context.guiWidth() / 2 - msgWidth / 2;
 		int msgX2 = msgX1 + msgWidth + 2;
-		int msgY1 = context.getScaledWindowHeight() / 2 + 1;
+		int msgY1 = context.guiHeight() / 2 + 1;
 		int msgY2 = msgY1 + 10;
 		
 		// background
 		context.fill(msgX1, msgY1, msgX2, msgY2, 0x80000000);
 		
 		// text
-		context.drawText(tr, message, msgX1 + 2, msgY1 + 1, 0xFFFFFFFF, false);
+		context.text(tr, message, msgX1 + 2, msgY1 + 1, 0xFFFFFFFF, false);
 	}
 	
-	private void renderNBTWindow(DrawContext context)
+	private void renderNBTWindow(GuiGraphicsExtractor context)
 	{
 		if(nbtData == null)
 			return;
 		
-		TextRenderer tr = MC.textRenderer;
+		Font tr = MC.font;
 		String[] lines = nbtData.split("\n");
 		
 		// Calculate window size
 		int maxWidth = 0;
 		for(String line : lines)
-			maxWidth = Math.max(maxWidth, tr.getWidth(line));
+			maxWidth = Math.max(maxWidth, tr.width(line));
 		
 		int windowWidth =
-			Math.min(maxWidth + 20, context.getScaledWindowWidth() - 40);
+			Math.min(maxWidth + 20, context.guiWidth() - 40);
 		int windowHeight = Math.min(lines.length * 10 + 30,
-			context.getScaledWindowHeight() - 40);
+			context.guiHeight() - 40);
 		
-		int windowX = (context.getScaledWindowWidth() - windowWidth) / 2;
-		int windowY = (context.getScaledWindowHeight() - windowHeight) / 2;
+		int windowX = (context.guiWidth() - windowWidth) / 2;
+		int windowY = (context.guiHeight() - windowHeight) / 2;
 		
 		// Window background
 		context.fill(windowX, windowY, windowX + windowWidth,
@@ -288,7 +288,7 @@ public final class NBTViewerHack extends Hack
 		// Title bar
 		context.fill(windowX + 1, windowY + 1, windowX + windowWidth - 1,
 			windowY + 12, 0xFF333333);
-		context.drawText(tr, "NBT Data Viewer (Press ESC to close)",
+		context.text(tr, "NBT Data Viewer (Press ESC to close)",
 			windowX + 5, windowY + 3, 0xFFFFFFFF, false);
 		
 		// Content area
@@ -300,16 +300,16 @@ public final class NBTViewerHack extends Hack
 		for(int i = 0; i < Math.min(lines.length, maxLines); i++)
 		{
 			String line = lines[i];
-			if(tr.getWidth(line) > windowWidth - 20)
+			if(tr.width(line) > windowWidth - 20)
 			{
 				// Truncate long lines
-				while(tr.getWidth(line + "...") > windowWidth - 20
+				while(tr.width(line + "...") > windowWidth - 20
 					&& line.length() > 0)
 					line = line.substring(0, line.length() - 1);
 				line += "...";
 			}
 			
-			context.drawText(tr, line, windowX + 5, contentY + i * 10,
+			context.text(tr, line, windowX + 5, contentY + i * 10,
 				0xFFFFFFFF, false);
 		}
 		
@@ -318,7 +318,7 @@ public final class NBTViewerHack extends Hack
 		{
 			String scrollText =
 				"... (" + (lines.length - maxLines) + " more lines)";
-			context.drawText(tr, scrollText, windowX + 5,
+			context.text(tr, scrollText, windowX + 5,
 				contentY + maxLines * 10, 0xFF999999, false);
 		}
 	}

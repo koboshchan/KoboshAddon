@@ -10,10 +10,10 @@ package com.kobosh.koboshaddon.client.hack;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.MouseUpdateListener;
@@ -71,7 +71,7 @@ public final class DragonAimBotHack extends Hack
 	private final CheckboxSetting snap = new CheckboxSetting("Snap",
 		"Instantly snap to targets instead of smooth rotation.", false);
 	
-	private EnderDragonEntity target;
+	private EnderDragon target;
 	private float nextYaw;
 	private float nextPitch;
 	
@@ -124,7 +124,7 @@ public final class DragonAimBotHack extends Hack
 		target = null;
 		
 		// don't aim when a container/inventory screen is open
-		if(MC.currentScreen instanceof HandledScreen)
+		if(MC.gui.screen() instanceof AbstractContainerScreen)
 			return;
 		
 		if(!aimWhileBlocking.isChecked() && MC.player.isUsingItem())
@@ -135,28 +135,28 @@ public final class DragonAimBotHack extends Hack
 			return;
 		
 		// Calculate predicted target position
-		Vec3d hitVec;
+		Vec3 hitVec;
 		if(predictMovement.getValue() > 0)
 		{
 			// Get the desired aim point first
-			Vec3d aimPoint = aimAt.getAimPoint(target);
+			Vec3 aimPoint = aimAt.getAimPoint(target);
 			
 			// Use movement prediction but maintain the aim point offset
 			double d = RotationUtils.getEyesPos()
 				.distanceTo(target.getBoundingBox().getCenter())
 				* predictMovement.getValue();
 			double posX =
-				target.getX() + (target.getX() - target.lastRenderX) * d;
+				target.getX() + (target.getX() - target.xOld) * d;
 			double posY =
-				target.getY() + (target.getY() - target.lastRenderY) * d;
+				target.getY() + (target.getY() - target.yOld) * d;
 			double posZ =
-				target.getZ() + (target.getZ() - target.lastRenderZ) * d;
+				target.getZ() + (target.getZ() - target.zOld) * d;
 			
 			// Apply the aim point offset to the predicted position
-			Vec3d targetCenter = target.getBoundingBox().getCenter();
-			Vec3d aimOffset = aimPoint.subtract(targetCenter);
+			Vec3 targetCenter = target.getBoundingBox().getCenter();
+			Vec3 aimOffset = aimPoint.subtract(targetCenter);
 			
-			hitVec = new Vec3d(posX + aimOffset.x, posY + aimOffset.y,
+			hitVec = new Vec3(posX + aimOffset.x, posY + aimOffset.y,
 				posZ + aimOffset.z);
 		}else
 		{
@@ -168,7 +168,7 @@ public final class DragonAimBotHack extends Hack
 		if(verticalOffset.getValue() != 0)
 		{
 			double offsetAmount =
-				verticalOffset.getValue() * target.getHeight();
+				verticalOffset.getValue() * target.getBbHeight();
 			hitVec = hitVec.add(0, offsetAmount, 0);
 		}
 		
@@ -184,8 +184,8 @@ public final class DragonAimBotHack extends Hack
 		if(snap.isChecked())
 		{
 			// Instantly snap to target - directly set player rotation
-			MC.player.setYaw(needed.yaw());
-			MC.player.setPitch(needed.pitch());
+			MC.player.setYRot(needed.yaw());
+			MC.player.setXRot(needed.pitch());
 			// Set next values to prevent mouse update from interfering
 			nextYaw = needed.yaw();
 			nextPitch = needed.pitch();
@@ -204,10 +204,10 @@ public final class DragonAimBotHack extends Hack
 		Stream<Entity> stream = EntityUtils.getAttackableEntities();
 		
 		// Only target Ender Dragons
-		stream = stream.filter(e -> e instanceof EnderDragonEntity);
+		stream = stream.filter(e -> e instanceof EnderDragon);
 		
 		double rangeSq = range.getValueSq();
-		stream = stream.filter(e -> MC.player.squaredDistanceTo(e) <= rangeSq);
+		stream = stream.filter(e -> MC.player.distanceToSqr(e) <= rangeSq);
 		
 		if(fov.getValue() < 360.0)
 			stream = stream.filter(e -> RotationUtils.getAngleToLookVec(
@@ -217,7 +217,7 @@ public final class DragonAimBotHack extends Hack
 		// check)
 		stream = stream.filter(e -> e != MC.player);
 		
-		target = (EnderDragonEntity)stream
+		target = (EnderDragon)stream
 			.min(Comparator.comparingDouble(
 				e -> RotationUtils.getAngleToLookVec(aimAt.getAimPoint(e))))
 			.orElse(null);
@@ -229,8 +229,8 @@ public final class DragonAimBotHack extends Hack
 		if(target == null || MC.player == null)
 			return;
 		
-		float curYaw = MC.player.getYaw();
-		float curPitch = MC.player.getPitch();
+		float curYaw = MC.player.getYRot();
+		float curPitch = MC.player.getXRot();
 		int diffYaw = (int)(nextYaw - curYaw);
 		int diffPitch = (int)(nextPitch - curPitch);
 		
