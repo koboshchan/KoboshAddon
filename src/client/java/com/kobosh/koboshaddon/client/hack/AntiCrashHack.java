@@ -7,10 +7,10 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.ExplosionS2CPacket;
-import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.PacketInputListener;
@@ -46,20 +46,20 @@ public final class AntiCrashHack extends Hack implements PacketInputListener
 	@Override
 	public void onReceivedPacket(PacketInputEvent event)
 	{
-		if(event.getPacket() instanceof ExplosionS2CPacket)
+		if(event.getPacket() instanceof ClientboundExplodePacket)
 			return;
 
-		if(event.getPacket() instanceof ParticleS2CPacket packet)
+		if(event.getPacket() instanceof ClientboundLevelParticlesPacket packet)
 		{
 			if(packet.getCount() > 100_000)
 				cancel(event);
 			return;
 		}
 
-		if(event.getPacket() instanceof PlayerPositionLookS2CPacket)
+		if(event.getPacket() instanceof ClientboundPlayerPositionPacket)
 			return;
 
-		if(event.getPacket() instanceof EntityVelocityUpdateS2CPacket)
+		if(event.getPacket() instanceof ClientboundSetEntityMotionPacket)
 		{
 			if(MC.player == null)
 				cancel(event);

@@ -1,7 +1,7 @@
-accessWidener	v1	named
+accessWidener v2 named
 
-# Allow access to MinecraftClient.itemUseCooldown
-accessible	field	net/minecraft/client/MinecraftClient	itemUseCooldown	I
+# Allow access to Minecraft.missTime (Official name for itemUseCooldown)
+accessible	field	net/minecraft/client/Minecraft	missTime	I
 
 # Allow access to AxeItem.STRIPPED_BLOCKS
-accessible	field	net/minecraft/item/AxeItem	STRIPPED_BLOCKS	Ljava/util/Map;
+accessible	field	net/minecraft/world/item/AxeItem	STRIPPABLES	Ljava/util/Map;

@@ -7,12 +7,12 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.Blocks;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.RenderListener;
@@ -76,7 +76,7 @@ public final class TeleportHack extends Hack
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.world == null)
+		if(MC.player == null || MC.level == null)
 		{
 			prevAttack = false;
 			return;
@@ -84,17 +84,17 @@ public final class TeleportHack extends Hack
 
 		currentTarget = getTarget();
 
-		boolean attacking = MC.options.attackKey.isPressed();
+		boolean attacking = MC.options.keyAttack.isDown();
 		boolean clicked = attacking && !prevAttack;
 		prevAttack = attacking;
 
 		if(currentTarget == null || !clicked)
 			return;
 
-		BlockPos feet = currentTarget.up();
-		BlockPos head = feet.up();
-		boolean blocked = !MC.world.getBlockState(feet).isReplaceable()
-			|| !MC.world.getBlockState(head).isReplaceable();
+		BlockPos feet = currentTarget.above();
+		BlockPos head = feet.above();
+		boolean blocked = !MC.level.getBlockState(feet).canBeReplaced()
+			|| !MC.level.getBlockState(head).canBeReplaced();
 		if(blocked)
 		{
 			ChatUtils.error("Target space is blocked.");
@@ -102,27 +102,27 @@ public final class TeleportHack extends Hack
 		}
 
 		if(!includeLiquids.isChecked()
-			&& (!MC.world.getFluidState(currentTarget).isEmpty()
-				|| !MC.world.getFluidState(feet).isEmpty()))
+			&& (!MC.level.getFluidState(currentTarget).isEmpty()
+				|| !MC.level.getFluidState(feet).isEmpty()))
 		{
 			ChatUtils.error("Target is in liquid.");
 			return;
 		}
 
-		MC.player.setPosition(currentTarget.getX() + 0.5, currentTarget.getY() + 1.1,
+		MC.player.setPos(currentTarget.getX() + 0.5, currentTarget.getY() + 1.1,
 			currentTarget.getZ() + 0.5);
-		MC.player.setVelocity(0, 0.2, 0);
+		MC.player.setDeltaMovement(0, 0.2, 0);
 	}
 
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
-		if(currentTarget == null || MC.world == null)
+		if(currentTarget == null || MC.level == null)
 			return;
 
-		Box box = new Box(currentTarget.up());
-		boolean solid = !MC.world.getBlockState(currentTarget).isOf(Blocks.AIR)
-			&& MC.world.getFluidState(currentTarget).isEmpty();
+		AABB box = new AABB(currentTarget.above());
+		boolean solid = !MC.level.getBlockState(currentTarget).is(Blocks.AIR)
+			&& MC.level.getFluidState(currentTarget).isEmpty();
 		int color = solid ? solidColor.getColorI(0x90) : passableColor.getColorI(0x90);
 		RenderUtils.drawOutlinedBox(matrixStack, box, color, false);
 		RenderUtils.drawSolidBox(matrixStack, box, color & 0x40FFFFFF, false);
@@ -132,9 +132,9 @@ public final class TeleportHack extends Hack
 	{
 		if(MC.getCameraEntity() == null)
 			return null;
-		HitResult hit = MC.getCameraEntity().raycast(reach.getValue(), 0,
+		HitResult hit = MC.getCameraEntity().pick(reach.getValue(), 0,
 			includeLiquids.isChecked());
-		if(hit.getType() != HitResult.Type.BLOCK)
+		if(hit.getType() != BlockHitResult.Type.BLOCK)
 			return null;
 		return ((BlockHitResult)hit).getBlockPos();
 	}

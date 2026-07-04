@@ -7,18 +7,19 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.block.Block;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.PotionItem;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PotionItem;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -74,8 +75,8 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 	{
 		String name = getName();
 		
-		StatusEffectInstance invisEffect =
-			MC.player.getStatusEffect(StatusEffects.INVISIBILITY);
+		MobEffectInstance invisEffect =
+			MC.player.getEffect(MobEffects.INVISIBILITY);
 		if(invisEffect != null)
 		{
 			int ticksLeft = invisEffect.getDuration();
@@ -120,22 +121,22 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 			if(rotationRestoreTicks == 0)
 			{
 				// Restore original rotation and unfreeze player
-				MC.player.setYaw(originalYaw);
-				MC.player.setPitch(originalPitch);
+				MC.player.setYRot(originalYaw);
+				MC.player.setXRot(originalPitch);
 				playerFrozen = false;
 				WURST.getRotationFaker()
-					.faceVectorClient(new Vec3d(originalYaw, originalPitch, 0));
+					.faceVectorClient(new Vec3(originalYaw, originalPitch, 0));
 			}
 		}
 		
 		// Freeze player movement if needed
 		if(playerFrozen)
 		{
-			MC.player.setVelocity(0, MC.player.getVelocity().y, 0);
+			MC.player.setDeltaMovement(0, MC.player.getDeltaMovement().y, 0);
 		}
 		
-		StatusEffectInstance invisEffect =
-			MC.player.getStatusEffect(StatusEffects.INVISIBILITY);
+		MobEffectInstance invisEffect =
+			MC.player.getEffect(MobEffects.INVISIBILITY);
 		
 		// Reset state if no invisibility effect
 		if(invisEffect == null)
@@ -239,20 +240,20 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		BlockPos belowPos = new BlockPos((int)MC.player.getX(),
 			(int)(MC.player.getY() - 0.1), (int)MC.player.getZ());
 		
-		return !MC.world.getBlockState(belowPos).isAir() && MC.world
-			.getBlockState(belowPos).isSolidBlock(MC.world, belowPos);
+		return !MC.level.getBlockState(belowPos).isAir() && MC.level
+			.getBlockState(belowPos).isSolid();
 	}
 	
 	private void useInvisibilityPotion()
 	{
 		// Store original rotation and freeze player
-		originalYaw = MC.player.getYaw();
-		originalPitch = MC.player.getPitch();
+		originalYaw = MC.player.getYRot();
+		originalPitch = MC.player.getXRot();
 		playerFrozen = true;
 		
 		// Look down all the way (90 degrees)
-		MC.player.setYaw(originalYaw); // Keep original yaw
-		MC.player.setPitch(90.0f);
+		MC.player.setYRot(originalYaw); // Keep original yaw
+		MC.player.setXRot(90.0f);
 		
 		// First try to find invisibility potion in hotbar
 		int hotbarSlot = findInvisibilityPotionInHotbar();
@@ -261,7 +262,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		{
 			// Switch to the potion and use it
 			MC.player.getInventory().setSelectedSlot(hotbarSlot);
-			MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+			MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
 			ChatUtils.message("Used invisibility potion from hotbar slot "
 				+ (hotbarSlot + 1));
 			
@@ -287,7 +288,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 				// Move potion to hotbar and use it
 				moveItemToHotbar(inventorySlot, targetHotbarSlot);
 				MC.player.getInventory().setSelectedSlot(targetHotbarSlot);
-				MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+				MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
 				ChatUtils.message(
 					"Moved and used invisibility potion from inventory");
 			}else
@@ -307,7 +308,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 	{
 		for(int i = 0; i < 9; i++)
 		{
-			ItemStack stack = MC.player.getInventory().getStack(i);
+			ItemStack stack = MC.player.getInventory().getItem(i);
 			if(isInvisibilityPotion(stack))
 				return i;
 		}
@@ -318,7 +319,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 	{
 		for(int i = 9; i < 36; i++) // Main inventory slots
 		{
-			ItemStack stack = MC.player.getInventory().getStack(i);
+			ItemStack stack = MC.player.getInventory().getItem(i);
 			if(isInvisibilityPotion(stack))
 				return i;
 		}
@@ -329,7 +330,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 	{
 		for(int i = 0; i < 9; i++)
 		{
-			if(MC.player.getInventory().getStack(i).isEmpty())
+			if(MC.player.getInventory().getItem(i).isEmpty())
 				return i;
 		}
 		return -1;
@@ -340,14 +341,14 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		if(stack.isEmpty() || !(stack.getItem() instanceof PotionItem))
 			return false;
 		
-		PotionContentsComponent potionContents = stack.getComponents()
-			.get(net.minecraft.component.DataComponentTypes.POTION_CONTENTS);
+		PotionContents potionContents = stack.getComponents()
+			.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
 		if(potionContents == null)
 			return false;
 		
-		for(StatusEffectInstance effect : potionContents.getEffects())
+		for(MobEffectInstance effect : potionContents.getAllEffects())
 		{
-			if(effect.getEffectType() == StatusEffects.INVISIBILITY)
+			if(effect.getEffect() == MobEffects.INVISIBILITY)
 				return true;
 		}
 		return false;
@@ -358,15 +359,15 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		// Find empty inventory slot
 		for(int i = 9; i < 36; i++)
 		{
-			if(MC.player.getInventory().getStack(i).isEmpty())
+			if(MC.player.getInventory().getItem(i).isEmpty())
 			{
 				// Move item from hotbar to inventory
-				MC.interactionManager.clickSlot(
-					MC.player.currentScreenHandler.syncId, hotbarSlot, 0,
-					net.minecraft.screen.slot.SlotActionType.PICKUP, MC.player);
-				MC.interactionManager.clickSlot(
-					MC.player.currentScreenHandler.syncId, i, 0,
-					net.minecraft.screen.slot.SlotActionType.PICKUP, MC.player);
+				MC.gameMode.handleInventoryMouseClick(
+					MC.player.containerMenu.containerId, hotbarSlot, 0,
+					net.minecraft.world.inventory.ClickType.PICKUP, MC.player);
+				MC.gameMode.handleInventoryMouseClick(
+					MC.player.containerMenu.containerId, i, 0,
+					net.minecraft.world.inventory.ClickType.PICKUP, MC.player);
 				break;
 			}
 		}
@@ -375,11 +376,11 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 	private void moveItemToHotbar(int inventorySlot, int hotbarSlot)
 	{
 		// Move item from inventory to hotbar
-		MC.interactionManager.clickSlot(MC.player.currentScreenHandler.syncId,
-			inventorySlot, 0, net.minecraft.screen.slot.SlotActionType.PICKUP,
+		MC.gameMode.handleInventoryMouseClick(MC.player.containerMenu.containerId,
+			inventorySlot, 0, net.minecraft.world.inventory.ClickType.PICKUP,
 			MC.player);
-		MC.interactionManager.clickSlot(MC.player.currentScreenHandler.syncId,
-			hotbarSlot, 0, net.minecraft.screen.slot.SlotActionType.PICKUP,
+		MC.gameMode.handleInventoryMouseClick(MC.player.containerMenu.containerId,
+			hotbarSlot, 0, net.minecraft.world.inventory.ClickType.PICKUP,
 			MC.player);
 	}
 	
@@ -401,11 +402,10 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		int blockSlot = -1;
 		for(int i = 0; i < 9; i++)
 		{
-			ItemStack stack = MC.player.getInventory().getStack(i);
+			ItemStack stack = MC.player.getInventory().getItem(i);
 			if(!stack.isEmpty()
-				&& Block.getBlockFromItem(stack.getItem()) != null
-				&& Block.getBlockFromItem(stack.getItem()) != Registries.BLOCK
-					.get(0)) // Not air
+				&& Block.byItem(stack.getItem()) != null
+				&& Block.byItem(stack.getItem()) != Blocks.AIR) // Not air
 			{
 				blockSlot = i;
 				break;
@@ -420,7 +420,7 @@ public final class InvisReminderHack extends Hack implements UpdateListener
 		MC.player.getInventory().setSelectedSlot(blockSlot);
 		
 		// Create air place hit result
-		Vec3d hitVec = Vec3d.ofCenter(pos);
+		Vec3 hitVec = Vec3.atCenterOf(pos);
 		BlockHitResult hitResult =
 			new BlockHitResult(hitVec, Direction.UP, pos, false);
 		

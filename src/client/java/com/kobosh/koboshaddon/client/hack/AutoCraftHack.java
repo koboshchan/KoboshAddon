@@ -7,18 +7,19 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
+import net.minecraft.core.Holder;
 import java.util.List;
 
-import net.minecraft.client.gui.screen.recipebook.RecipeResultCollection;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.RecipeDisplayEntry;
-import net.minecraft.recipe.display.RecipeDisplay;
-import net.minecraft.recipe.display.SlotDisplayContexts;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.CraftingScreenHandler;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
+import net.minecraft.world.item.crafting.display.SlotDisplayContext;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.resources.Identifier;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -96,49 +97,49 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 	public void onUpdate()
 	{
 		// Basic safety checks
-		if(MC.player == null || MC.interactionManager == null
-			|| MC.world == null)
+		if(MC.player == null || MC.gameMode == null
+			|| MC.level == null)
 			return;
 		
 		if(items.getItemNames().isEmpty())
 			return;
 		
 		// Check if we're in a crafting screen
-		if(!(MC.player.currentScreenHandler instanceof CraftingScreenHandler))
+		if(!(MC.player.containerMenu instanceof CraftingMenu))
 			return;
 		
 		// Anti-desync: update inventory
 		if(antiDesync.isChecked())
-			MC.player.getInventory().updateItems();
+			
 		
 		attemptCrafting();
 	}
 	
 	private void attemptCrafting()
 	{
-		CraftingScreenHandler craftingHandler =
-			(CraftingScreenHandler)MC.player.currentScreenHandler;
+		CraftingMenu craftingHandler =
+			(CraftingMenu)MC.player.containerMenu;
 		
 		List<String> itemNames = items.getItemNames();
-		List<RecipeResultCollection> recipeCollections =
-			MC.player.getRecipeBook().getOrderedResults();
+		List<RecipeCollection> recipeCollections =
+			MC.player.getRecipeBook().getCollections();
 		
-		for(RecipeResultCollection collection : recipeCollections)
+		for(RecipeCollection collection : recipeCollections)
 		{
 			List<RecipeDisplayEntry> craftableRecipes = collection
-				.filter(RecipeResultCollection.RecipeFilterMode.CRAFTABLE);
+				.getSelectedRecipes(RecipeCollection.CraftableStatus.CRAFTABLE);
 			
 			for(RecipeDisplayEntry recipe : craftableRecipes)
 			{
 				RecipeDisplay recipeDisplay = recipe.display();
 				List<ItemStack> resultStacks = recipeDisplay.result()
-					.getStacks(SlotDisplayContexts.createParameters(MC.world));
+					.resolveForStacks(SlotDisplayContext.fromLevel(MC.level));
 				
 				for(ItemStack resultStack : resultStacks)
 				{
 					Item resultItem = resultStack.getItem();
 					String itemName =
-						Registries.ITEM.getId(resultItem).toString();
+						BuiltInRegistries.ITEM.getKey(resultItem).toString();
 					
 					if(!itemNames.contains(itemName))
 						continue;
@@ -147,12 +148,12 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 						ChatUtils.message("Crafting " + resultStack.getCount()
 							+ "x " + itemName);
 					
-					MC.interactionManager.clickRecipe(craftingHandler.syncId,
+					MC.gameMode.handlePlaceRecipe(craftingHandler.containerId,
 						recipe.id(), craftAll.isChecked());
 					
-					SlotActionType actionType = drop.isChecked()
-						? SlotActionType.THROW : SlotActionType.QUICK_MOVE;
-					MC.interactionManager.clickSlot(craftingHandler.syncId, 0,
+					ClickType actionType = drop.isChecked()
+						? ClickType.THROW : ClickType.QUICK_MOVE;
+					MC.gameMode.handleInventoryMouseClick(craftingHandler.containerId, 0,
 						1, actionType, MC.player);
 					
 					return;
@@ -163,7 +164,7 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 	
 	public boolean isValidCraftingItem(Item item)
 	{
-		String itemName = Registries.ITEM.getId(item).toString();
+		String itemName = BuiltInRegistries.ITEM.getKey(item).toString();
 		return items.getItemNames().contains(itemName);
 	}
 	
@@ -178,7 +179,7 @@ public final class AutoCraftHack extends Hack implements UpdateListener
 			return;
 		}
 		
-		Item item = Registries.ITEM.get(itemId);
+		Item item = BuiltInRegistries.ITEM.get(itemId).map(Holder::value).orElse(null);
 		if(item == null)
 		{
 			if(debugMode.isChecked())

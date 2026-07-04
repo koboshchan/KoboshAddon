@@ -7,10 +7,10 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.entity.vehicle.AbstractMinecartEntity;
-import net.minecraft.entity.vehicle.BoatEntity;
-import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
-import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.boat.Boat;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.world.phys.EntityHitResult;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.PacketOutputListener;
@@ -48,18 +48,18 @@ public final class VehicleOneHitHack extends Hack
 	@Override
 	public void onSentPacket(PacketOutputEvent event)
 	{
-		if(!(event.getPacket() instanceof PlayerInteractEntityC2SPacket))
+		if(!(event.getPacket() instanceof ServerboundInteractPacket))
 			return;
 		
-		if(!(MC.crosshairTarget instanceof EntityHitResult ehr))
+		if(!(MC.hitResult instanceof EntityHitResult ehr))
 			return;
 		
-		if(!(ehr.getEntity() instanceof AbstractMinecartEntity)
-			&& !(ehr.getEntity() instanceof BoatEntity))
+		if(!(ehr.getEntity() instanceof AbstractMinecart)
+			&& !(ehr.getEntity() instanceof Boat))
 			return;
 		
 		for(int i = 0; i < amount.getValueI() - 1; i++)
-			MC.player.networkHandler.getConnection().send(event.getPacket(),
+			MC.player.connection.getConnection().send(event.getPacket(),
 				null);
 	}
 }

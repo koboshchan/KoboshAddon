@@ -7,9 +7,9 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.item.BowItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -53,12 +53,12 @@ public final class BowSpamHack extends Hack implements UpdateListener
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.interactionManager == null)
+		if(MC.player == null || MC.gameMode == null)
 			return;
-		if(MC.currentScreen != null)
+		if(MC.screen != null)
 			return;
 
-		Hand hand = getBowHand();
+		InteractionHand hand = getBowHand();
 		if(hand == null)
 		{
 			reuseDelay = 0;
@@ -70,10 +70,10 @@ public final class BowSpamHack extends Hack implements UpdateListener
 
 		if(MC.player.isUsingItem())
 		{
-			if(MC.player.getActiveHand() != hand)
+			if(MC.player.getUsedItemHand() != hand)
 				return;
 
-			if(MC.player.getItemUseTime() >= minChargeTicks.getValueI())
+			if(MC.player.getTicksUsingItem() >= minChargeTicks.getValueI())
 			{
 				// Release using-player state directly to avoid getting stuck in draw.
 				MC.player.stopUsingItem();
@@ -85,18 +85,18 @@ public final class BowSpamHack extends Hack implements UpdateListener
 		if(reuseDelay > 0)
 			return;
 
-		MC.interactionManager.interactItem(MC.player, hand);
+		MC.gameMode.useItem(MC.player, hand);
 	}
 
-	private Hand getBowHand()
+	private InteractionHand getBowHand()
 	{
-		ItemStack mainHand = MC.player.getMainHandStack();
+		ItemStack mainHand = MC.player.getMainHandItem();
 		if(mainHand.getItem() instanceof BowItem)
-			return Hand.MAIN_HAND;
+			return InteractionHand.MAIN_HAND;
 
-		ItemStack offHand = MC.player.getOffHandStack();
+		ItemStack offHand = MC.player.getOffhandItem();
 		if(offHand.getItem() instanceof BowItem)
-			return Hand.OFF_HAND;
+			return InteractionHand.OFF_HAND;
 
 		return null;
 	}

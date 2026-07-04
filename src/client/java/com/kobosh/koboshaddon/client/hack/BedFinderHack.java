@@ -7,6 +7,7 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
+import net.minecraft.core.Holder;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,12 +18,12 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Collectors;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.Block;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.PacketInputListener;
@@ -74,7 +75,7 @@ public final class BedFinderHack extends Hack
 	
 	private ForkJoinPool forkJoinPool;
 	private ForkJoinTask<HashSet<BlockPos>> getMatchingBlocksTask;
-	private List<Box> bedBoxes = List.of();
+	private List<AABB> bedBoxes = List.of();
 	private boolean bufferUpToDate;
 	
 	public BedFinderHack()
@@ -90,7 +91,7 @@ public final class BedFinderHack extends Hack
 		for(String bedType : bedTypes)
 		{
 			Block bed =
-				Registries.BLOCK.get(Identifier.of("minecraft", bedType));
+				BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", bedType)).map(Holder::value).orElse(null);
 			if(bed != null)
 				bedBlocks.add(bed);
 		}
@@ -165,7 +166,7 @@ public final class BedFinderHack extends Hack
 	}
 	
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
 		if(bedBoxes.isEmpty())
 			return;
@@ -183,7 +184,7 @@ public final class BedFinderHack extends Hack
 		{
 			int tracerColor = color.getColorI(0x80);
 			RenderUtils.drawTracers(matrixStack, partialTicks,
-				bedBoxes.stream().map(Box::getCenter).toList(), tracerColor,
+				bedBoxes.stream().map(AABB::getCenter).toList(), tracerColor,
 				false);
 		}
 	}
@@ -199,9 +200,9 @@ public final class BedFinderHack extends Hack
 	
 	private void startGetMatchingBlocksTask()
 	{
-		BlockPos eyesPos = BlockPos.ofFloored(RotationUtils.getEyesPos());
+		BlockPos eyesPos = BlockPos.containing(RotationUtils.getEyesPos());
 		Comparator<BlockPos> comparator =
-			Comparator.comparingInt(pos -> eyesPos.getManhattanDistance(pos));
+			Comparator.comparingInt(pos -> eyesPos.distManhattan(pos));
 		
 		getMatchingBlocksTask = forkJoinPool.submit(() -> coordinator
 			.getMatches().parallel().map(ChunkSearcher.Result::pos)
@@ -223,7 +224,7 @@ public final class BedFinderHack extends Hack
 			notify = false;
 		}
 
-		bedBoxes = matchingBlocks.stream().map(Box::new).toList();
+		bedBoxes = matchingBlocks.stream().map(AABB::new).toList();
 		
 		bufferUpToDate = true;
 	}

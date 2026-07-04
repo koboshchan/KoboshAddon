@@ -7,11 +7,11 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.screen.GenericContainerScreenHandler;
-import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.util.Mth;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.PacketOutputListener;
@@ -102,7 +102,7 @@ public final class EventReactorHack extends Hack
 	@Override
 	public void onUpdate()
 	{
-		if(MC.player == null || MC.world == null)
+		if(MC.player == null || MC.level == null)
 			return;
 
 		int inventoryAmount = getInventoryAmount();
@@ -127,12 +127,12 @@ public final class EventReactorHack extends Hack
 	@Override
 	public void onSentPacket(PacketOutputEvent event)
 	{
-		if(!(event.getPacket() instanceof PlayerActionC2SPacket packet))
+		if(!(event.getPacket() instanceof ServerboundPlayerActionPacket packet))
 			return;
 
-		PlayerActionC2SPacket.Action action = packet.getAction();
-		if(action == PlayerActionC2SPacket.Action.DROP_ITEM
-			|| action == PlayerActionC2SPacket.Action.DROP_ALL_ITEMS)
+		ServerboundPlayerActionPacket.Action action = packet.getAction();
+		if(action == ServerboundPlayerActionPacket.Action.DROP_ITEM
+			|| action == ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS)
 			dropTriggered = true;
 	}
 
@@ -181,19 +181,19 @@ public final class EventReactorHack extends Hack
 
 	private void doSayInChat()
 	{
-		if(MC.player == null || MC.player.networkHandler == null)
+		if(MC.player == null || MC.player.connection == null)
 			return;
 
 		String message = chatMessage.getValue().trim();
 		if(message.isEmpty())
 			return;
 
-		MC.player.networkHandler.sendChatMessage(message);
+		MC.player.connection.sendChat(message);
 	}
 
 	private void doRunCommand()
 	{
-		if(MC.player == null || MC.player.networkHandler == null)
+		if(MC.player == null || MC.player.connection == null)
 			return;
 
 		String cmd = command.getValue().trim();
@@ -206,7 +206,7 @@ public final class EventReactorHack extends Hack
 		if(cmd.isEmpty())
 			return;
 
-		MC.player.networkHandler.sendChatCommand(cmd);
+		MC.player.connection.sendCommand(cmd);
 	}
 
 	private void doToggleHack()
@@ -257,7 +257,7 @@ public final class EventReactorHack extends Hack
 
 	private boolean isOffCooldown()
 	{
-		int ticks = MathHelper.clamp(cooldownTicks.getValueI(), 0, 200);
+		int ticks = Mth.clamp(cooldownTicks.getValueI(), 0, 200);
 		if(ticks <= 0)
 			return true;
 
@@ -272,7 +272,7 @@ public final class EventReactorHack extends Hack
 
 		int total = 0;
 		for(int i = 0; i < 41; i++)
-			total += MC.player.getInventory().getStack(i).getCount();
+			total += MC.player.getInventory().getItem(i).getCount();
 
 		return total;
 	}
@@ -282,7 +282,7 @@ public final class EventReactorHack extends Hack
 		if(MC.player == null)
 			return false;
 
-		return MC.player.getInventory().getEmptySlot() == -1;
+		return MC.player.getInventory().getFreeSlot() == -1;
 	}
 
 	private boolean isChestOpen()
@@ -290,11 +290,11 @@ public final class EventReactorHack extends Hack
 		if(MC.player == null)
 			return false;
 
-		if(!(MC.currentScreen instanceof HandledScreen<?>))
+		if(!(MC.screen instanceof AbstractContainerScreen<?>))
 			return false;
 
-		return MC.player.currentScreenHandler instanceof GenericContainerScreenHandler
-			&& !(MC.player.currentScreenHandler instanceof PlayerScreenHandler);
+		return MC.player.containerMenu instanceof ChestMenu
+			&& !(MC.player.containerMenu instanceof InventoryMenu);
 	}
 
 	private boolean isLowHealth()

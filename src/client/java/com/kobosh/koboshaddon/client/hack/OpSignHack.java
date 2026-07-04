@@ -7,12 +7,12 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.hack.Hack;
@@ -31,14 +31,14 @@ public final class OpSignHack extends Hack
 	@Override
 	protected void onEnable()
 	{
-		if(!MC.player.getAbilities().creativeMode)
+		if(!MC.player.getAbilities().instabuild)
 		{
 			ChatUtils.error("Creative mode only.");
 			setEnabled(false);
 			return;
 		}
 		
-		if(!MC.player.getInventory().getStack(36).isEmpty())
+		if(!MC.player.getInventory().getItem(36).isEmpty())
 		{
 			ChatUtils.error("Please clear your shoes slot.");
 			setEnabled(false);
@@ -47,12 +47,12 @@ public final class OpSignHack extends Hack
 		
 		// generate item
 		ItemStack stack = new ItemStack(Blocks.OAK_SIGN);
-		NbtCompound nbtCompound = new NbtCompound();
-		stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbtCompound));
-		stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal("Copy Me"));
+		CompoundTag nbtCompound = new CompoundTag();
+		stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbtCompound));
+		stack.set(DataComponents.CUSTOM_NAME, Component.literal("Copy Me"));
 		
 		// give item
-		MC.player.getInventory().setStack(36, stack);
+		MC.player.getInventory().setItem(36, stack);
 		ChatUtils.message("Item has been placed in your shoes slot.");
 		setEnabled(false);
 	}

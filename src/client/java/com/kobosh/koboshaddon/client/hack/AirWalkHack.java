@@ -52,11 +52,11 @@ public final class AirWalkHack extends Hack implements UpdateListener
 		{}
 		
 		// If player is falling through the target Y, stop them
-		if(MC.player.getY() <= targetY && MC.player.getVelocity().y < 0)
+		if(MC.player.getY() <= targetY && MC.player.getDeltaMovement().y < 0)
 		{
-			MC.player.setVelocity(MC.player.getVelocity().x, 0,
-				MC.player.getVelocity().z);
-			MC.player.setPosition(MC.player.getX(), targetY, MC.player.getZ());
+			MC.player.setDeltaMovement(MC.player.getDeltaMovement().x, 0,
+				MC.player.getDeltaMovement().z);
+			MC.player.setPos(MC.player.getX(), targetY, MC.player.getZ());
 			MC.player.setOnGround(true);
 		}
 	}

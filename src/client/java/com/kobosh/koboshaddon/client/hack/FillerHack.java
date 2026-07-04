@@ -15,19 +15,19 @@ import java.util.stream.Collectors;
 
 import org.lwjgl.glfw.GLFW;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.ai.PathFinder;
@@ -156,7 +156,7 @@ public final class FillerHack extends Hack
 	}
 	
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
 		if(pathFinder != null)
 		{
@@ -176,28 +176,28 @@ public final class FillerHack extends Hack
 			// recently scanned blocks
 			if(step == Step.SCAN_AREA && area.progress < 1)
 			{
-				ArrayList<Box> boxes = new ArrayList<>();
+				ArrayList<AABB> boxes = new ArrayList<>();
 				for(int i = Math.max(0, area.blocksList.size()
 					- area.scanSpeed); i < area.blocksList.size(); i++)
-					boxes.add(new Box(area.blocksList.get(i)).expand(0.005));
+					boxes.add(new AABB(area.blocksList.get(i)).inflate(0.005));
 				
 				RenderUtils.drawOutlinedBoxes(matrixStack, boxes, black, true);
 				RenderUtils.drawSolidBoxes(matrixStack, boxes, blue1, true);
 			}
 			
 			// area box
-			Box areaBox =
-				new Box(area.minX, area.minY, area.minZ, area.minX + area.sizeX,
+			AABB areaBox =
+				new AABB(area.minX, area.minY, area.minZ, area.minX + area.sizeX,
 					area.minY + area.sizeY, area.minZ + area.sizeZ)
-						.contract(1 / 16.0);
+						.deflate(1 / 16.0);
 			RenderUtils.drawOutlinedBox(matrixStack, areaBox, black, true);
 			
 			// area scanner
 			if(area.progress < 1)
 			{
 				double scannerX =
-					MathHelper.lerp(area.progress, areaBox.minX, areaBox.maxX);
-				Box scanner = areaBox.withMinX(scannerX).withMaxX(scannerX);
+					Mth.lerp(area.progress, areaBox.minX, areaBox.maxX);
+				AABB scanner = areaBox.setMinX(scannerX).setMaxX(scannerX);
 				
 				RenderUtils.drawOutlinedBox(matrixStack, scanner, black, true);
 				RenderUtils.drawSolidBox(matrixStack, scanner, blue2, true);
@@ -207,23 +207,23 @@ public final class FillerHack extends Hack
 		// area preview
 		if(area == null && step == Step.END_POS && step.pos != null)
 		{
-			Box preview = Box.enclosing(Step.START_POS.pos, Step.END_POS.pos)
-				.contract(1 / 16.0);
+			AABB preview = AABB.encapsulatingFullBlocks(Step.START_POS.pos, Step.END_POS.pos)
+				.deflate(1 / 16.0);
 			RenderUtils.drawOutlinedBox(matrixStack, preview, black, true);
 		}
 		
 		// selected positions
-		ArrayList<Box> selectedBoxes = new ArrayList<>();
+		ArrayList<AABB> selectedBoxes = new ArrayList<>();
 		for(Step step : Step.SELECT_POSITION_STEPS)
 			if(step.pos != null)
-				selectedBoxes.add(new Box(step.pos).contract(1 / 16.0));
+				selectedBoxes.add(new AABB(step.pos).deflate(1 / 16.0));
 		RenderUtils.drawOutlinedBoxes(matrixStack, selectedBoxes, black, false);
 		RenderUtils.drawSolidBoxes(matrixStack, selectedBoxes, blue1, false);
 		
 		// posLookingAt
 		if(posLookingAt != null)
 		{
-			Box box = new Box(posLookingAt).contract(1 / 16.0);
+			AABB box = new AABB(posLookingAt).deflate(1 / 16.0);
 			RenderUtils.drawOutlinedBox(matrixStack, box, black, false);
 			RenderUtils.drawSolidBox(matrixStack, box, gray, false);
 		}
@@ -232,7 +232,7 @@ public final class FillerHack extends Hack
 	}
 	
 	@Override
-	public void onRenderGUI(DrawContext context, float partialTicks)
+	public void onRenderGUI(GuiGraphics context, float partialTicks)
 	{
 		String message;
 		if(step.selectPos && step.pos != null)
@@ -240,19 +240,19 @@ public final class FillerHack extends Hack
 		else
 			message = step.message;
 		
-		TextRenderer tr = MC.textRenderer;
-		int msgWidth = tr.getWidth(message);
+		Font tr = MC.font;
+		int msgWidth = tr.width(message);
 		
-		int msgX1 = context.getScaledWindowWidth() / 2 - msgWidth / 2;
+		int msgX1 = context.guiWidth() / 2 - msgWidth / 2;
 		int msgX2 = msgX1 + msgWidth + 2;
-		int msgY1 = context.getScaledWindowHeight() / 2 + 1;
+		int msgY1 = context.guiHeight() / 2 + 1;
 		int msgY2 = msgY1 + 10;
 		
 		// background
 		context.fill(msgX1, msgY1, msgX2, msgY2, 0x80000000);
 		
 		// text
-		context.drawText(tr, message, msgX1 + 2, msgY1 + 1, 0xFFFFFFFF, false);
+		context.drawString(tr, message, msgX1 + 2, msgY1 + 1, 0xFFFFFFFF, false);
 	}
 	
 	public void enableWithArea(BlockPos pos1, BlockPos pos2)
@@ -266,8 +266,8 @@ public final class FillerHack extends Hack
 	private void handlePositionSelection()
 	{
 		// continue with next step
-		if(step.pos != null && InputUtil
-			.isKeyPressed(MC.getWindow(), GLFW.GLFW_KEY_ENTER))
+		if(step.pos != null && InputConstants
+			.isKeyDown(MC.getWindow(), GLFW.GLFW_KEY_ENTER))
 		{
 			step = Step.values()[step.ordinal() + 1];
 			
@@ -278,21 +278,21 @@ public final class FillerHack extends Hack
 			return;
 		}
 		
-		if(MC.crosshairTarget instanceof BlockHitResult)
+		if(MC.hitResult instanceof BlockHitResult)
 		{
 			// set posLookingAt
-			posLookingAt = ((BlockHitResult)MC.crosshairTarget).getBlockPos();
+			posLookingAt = ((BlockHitResult)MC.hitResult).getBlockPos();
 			
 			// offset if sneaking
-			if(MC.options.sneakKey.isPressed())
+			if(MC.options.keyShift.isDown())
 				posLookingAt = posLookingAt
-					.offset(((BlockHitResult)MC.crosshairTarget).getSide());
+					.relative(((BlockHitResult)MC.hitResult).getDirection());
 			
 		}else
 			posLookingAt = null;
 		
 		// set selected position
-		if(posLookingAt != null && MC.options.useKey.isPressed())
+		if(posLookingAt != null && MC.options.keyUse.isDown())
 			step.pos = posLookingAt;
 	}
 	
@@ -333,21 +333,21 @@ public final class FillerHack extends Hack
 	
 	private boolean isAirBlock(BlockPos pos)
 	{
-		BlockState state = MC.world.getBlockState(pos);
-		return state.isAir() || state.isOf(Blocks.CAVE_AIR)
-			|| state.isOf(Blocks.VOID_AIR);
+		BlockState state = MC.level.getBlockState(pos);
+		return state.isAir() || state.is(Blocks.CAVE_AIR)
+			|| state.is(Blocks.VOID_AIR);
 	}
 	
 	private boolean canPlaceAt(BlockPos pos)
 	{
 		// Check if we have a valid block to place
-		ItemStack stack = MC.player.getMainHandStack();
+		ItemStack stack = MC.player.getMainHandItem();
 		if(!(stack.getItem() instanceof BlockItem))
 			return false;
 		
 		// Check if position is not occupied by player
-		Box playerBox = MC.player.getBoundingBox();
-		Box blockBox = new Box(pos);
+		AABB playerBox = MC.player.getBoundingBox();
+		AABB blockBox = new AABB(pos);
 		
 		return !playerBox.intersects(blockBox);
 	}
@@ -355,7 +355,7 @@ public final class FillerHack extends Hack
 	private void fillArea()
 	{
 		// Check if we have blocks to place
-		ItemStack stack = MC.player.getMainHandStack();
+		ItemStack stack = MC.player.getMainHandItem();
 		if(!(stack.getItem() instanceof BlockItem))
 		{
 			currentBlock = null;
@@ -375,9 +375,9 @@ public final class FillerHack extends Hack
 			return;
 		
 		// prioritize the closest block
-		Vec3d eyesVec = RotationUtils.getEyesPos();
+		Vec3 eyesVec = RotationUtils.getEyesPos();
 		Comparator<BlockPos> cNextTargetBlock =
-			Comparator.comparingDouble(pos -> pos.getSquaredDistance(eyesVec));
+			Comparator.comparingDouble(pos -> pos.distToCenterSqr(eyesVec));
 		
 		// get valid air blocks
 		ArrayList<BlockPos> validBlocks = getValidBlocks();
@@ -386,7 +386,7 @@ public final class FillerHack extends Hack
 		
 		// place all blocks in creative mode
 		boolean legit = mode.getSelected() == Mode.LEGIT;
-		if(MC.player.getAbilities().creativeMode && !legit)
+		if(MC.player.getAbilities().instabuild && !legit)
 		{
 			overlay.resetProgress();
 			
@@ -488,8 +488,8 @@ public final class FillerHack extends Hack
 			return false;
 		
 		// Check if within range
-		Vec3d eyesVec = RotationUtils.getEyesPos();
-		double distanceSq = pos.getSquaredDistance(eyesVec);
+		Vec3 eyesVec = RotationUtils.getEyesPos();
+		double distanceSq = pos.distToCenterSqr(eyesVec);
 		if(distanceSq > Math.pow(range.getValue(), 2))
 			return false;
 		
@@ -501,7 +501,7 @@ public final class FillerHack extends Hack
 				return false;
 			
 			// Face the position
-			RotationUtils.getNeededRotations(Vec3d.ofCenter(pos))
+			RotationUtils.getNeededRotations(Vec3.atCenterOf(pos))
 				.sendPlayerLookPacket();
 			
 			// Place block in air
@@ -527,24 +527,24 @@ public final class FillerHack extends Hack
 	private BlockHitResult createAirPlaceHitResult(BlockPos pos)
 	{
 		// Create a hit result for air placement similar to AirPlaceHack
-		Vec3d hitVec = Vec3d.ofCenter(pos);
-		return new BlockHitResult(hitVec, net.minecraft.util.math.Direction.UP,
+		Vec3 hitVec = Vec3.atCenterOf(pos);
+		return new BlockHitResult(hitVec, net.minecraft.core.Direction.UP,
 			pos, false);
 	}
 	
 	private ArrayList<BlockPos> getValidBlocks()
 	{
-		Vec3d eyesVec = RotationUtils.getEyesPos();
-		BlockPos eyesBlock = BlockPos.ofFloored(eyesVec);
+		Vec3 eyesVec = RotationUtils.getEyesPos();
+		BlockPos eyesBlock = BlockPos.containing(eyesVec);
 		double rangeSq = Math.pow(range.getValue() + 0.5, 2);
 		int blockRange = range.getValueCeil();
 		
 		return BlockUtils.getAllInBoxStream(eyesBlock, blockRange)
-			.filter(pos -> pos.getSquaredDistance(eyesVec) <= rangeSq)
+			.filter(pos -> pos.distToCenterSqr(eyesVec) <= rangeSq)
 			.filter(area.blocksSet::contains).filter(this::isAirBlock)
 			.filter(this::canPlaceAt)
 			.sorted(Comparator
-				.comparingDouble(pos -> pos.getSquaredDistance(eyesVec)))
+				.comparingDouble(pos -> pos.distToCenterSqr(eyesVec)))
 			.collect(Collectors.toCollection(ArrayList::new));
 	}
 	
@@ -626,7 +626,7 @@ public final class FillerHack extends Hack
 			sizeZ = Math.abs(startZ - endZ);
 			
 			totalBlocks = (sizeX + 1) * (sizeY + 1) * (sizeZ + 1);
-			scanSpeed = MathHelper.clamp(totalBlocks / 30, 1, 16384);
+			scanSpeed = Mth.clamp(totalBlocks / 30, 1, 16384);
 			iterator = BlockUtils.getAllInBox(start, end).iterator();
 		}
 	}
@@ -649,14 +649,14 @@ public final class FillerHack extends Hack
 		{
 			BlockPos goal = getGoal();
 			
-			return done = goal.down(2).equals(current)
-				|| goal.up().equals(current) || goal.north().equals(current)
+			return done = goal.below(2).equals(current)
+				|| goal.above().equals(current) || goal.north().equals(current)
 				|| goal.south().equals(current) || goal.west().equals(current)
 				|| goal.east().equals(current)
-				|| goal.down().north().equals(current)
-				|| goal.down().south().equals(current)
-				|| goal.down().west().equals(current)
-				|| goal.down().east().equals(current);
+				|| goal.below().north().equals(current)
+				|| goal.below().south().equals(current)
+				|| goal.below().west().equals(current)
+				|| goal.below().east().equals(current);
 		}
 	}
 }

@@ -9,10 +9,10 @@ package com.kobosh.koboshaddon.client.hack;
 
 import java.util.Locale;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.hack.Hack;
@@ -32,7 +32,7 @@ public final class CordTagsHack extends Hack
 		addSetting(axis);
 	}
 
-	public Text addCoord(PlayerEntity player, MutableText nametag)
+	public Component addCoord(Player player, Component nametag)
 	{
 		if(!isEnabled())
 			return nametag;
@@ -45,8 +45,8 @@ public final class CordTagsHack extends Hack
 		};
 
 		String coord = String.format(Locale.ROOT, " %.1f", value);
-		MutableText formattedCoord = Text.literal(coord).formatted(Formatting.AQUA);
-		return nametag.append(formattedCoord);
+		Component formattedCoord = Component.literal(coord).withStyle(ChatFormatting.AQUA);
+		return nametag.copy().append(formattedCoord);
 	}
 
 	private enum Axis

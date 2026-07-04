@@ -7,9 +7,9 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import net.minecraft.entity.vehicle.BoatEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.vehicle.boat.Boat;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
@@ -55,8 +55,8 @@ public final class BoatNoclipHack extends Hack implements UpdateListener
 	protected void onDisable()
 	{
 		EVENTS.remove(UpdateListener.class, this);
-		if(MC.player != null && MC.player.getVehicle() instanceof BoatEntity boat)
-			boat.noClip = false;
+		if(MC.player != null && MC.player.getVehicle() instanceof Boat boat)
+			boat.noPhysics = false;
 	}
 
 	@Override
@@ -64,34 +64,34 @@ public final class BoatNoclipHack extends Hack implements UpdateListener
 	{
 		if(MC.player == null)
 			return;
-		if(!(MC.player.getVehicle() instanceof BoatEntity boat))
+		if(!(MC.player.getVehicle() instanceof Boat boat))
 			return;
 
-		boat.noClip = true;
-		boat.setYaw(MC.player.getYaw());
+		boat.noPhysics = true;
+		boat.setYRot(MC.player.getYRot());
 
-		double velX = boat.getVelocity().x;
-		double velZ = boat.getVelocity().z;
+		double velX = boat.getDeltaMovement().x;
+		double velZ = boat.getDeltaMovement().z;
 		double velY = -fallSpeed.getValue() / 20.0;
 
 		if(speed.isChecked())
 		{
 			double inputX = 0;
 			double inputZ = 0;
-			if(MC.options.forwardKey.isPressed())
+			if(MC.options.keyUp.isDown())
 				inputZ += 1;
-			if(MC.options.backKey.isPressed())
+			if(MC.options.keyDown.isDown())
 				inputZ -= 1;
-			if(MC.options.leftKey.isPressed())
+			if(MC.options.keyLeft.isDown())
 				inputX += 1;
-			if(MC.options.rightKey.isPressed())
+			if(MC.options.keyRight.isDown())
 				inputX -= 1;
 
 			if(inputX != 0 || inputZ != 0)
 			{
-				double yawRad = Math.toRadians(MC.player.getYaw());
-				double sin = MathHelper.sin((float)yawRad);
-				double cos = MathHelper.cos((float)yawRad);
+				double yawRad = Math.toRadians(MC.player.getYRot());
+				double sin = Mth.sin((float)yawRad);
+				double cos = Mth.cos((float)yawRad);
 				double mag = Math.sqrt(inputX * inputX + inputZ * inputZ);
 				inputX /= mag;
 				inputZ /= mag;
@@ -101,11 +101,11 @@ public final class BoatNoclipHack extends Hack implements UpdateListener
 			}
 		}
 
-		if(MC.options.jumpKey.isPressed())
+		if(MC.options.keyJump.isDown())
 			velY = verticalSpeed.getValue() / 20.0;
-		else if(MC.options.sneakKey.isPressed() || MC.options.sprintKey.isPressed())
+		else if(MC.options.keyShift.isDown() || MC.options.keySprint.isDown())
 			velY = -verticalSpeed.getValue() / 20.0;
 
-		boat.setVelocity(new Vec3d(velX, velY, velZ));
+		boat.setDeltaMovement(new Vec3(velX, velY, velZ));
 	}
 }

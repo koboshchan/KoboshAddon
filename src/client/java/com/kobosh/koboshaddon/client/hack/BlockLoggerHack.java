@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.Block;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.WurstClient;
@@ -77,14 +77,14 @@ public final class BlockLoggerHack extends Hack
 	private Path logsFolder;
 	
 	// Blocks loaded from a log file via ViewLogsCmd
-	private List<Box> loadedBlockBoxes = List.of();
+	private List<AABB> loadedBlockBoxes = List.of();
 	
 	// Search system (like SearchHack)
 	private final ChunkSearcherCoordinator coordinator =
 		new ChunkSearcherCoordinator(area);
 	private ForkJoinPool forkJoinPool;
 	private ForkJoinTask<HashSet<BlockPos>> getMatchingBlocksTask;
-	private List<Box> blockBoxes = List.of();
+	private List<AABB> blockBoxes = List.of();
 	private boolean bufferUpToDate;
 	
 	public BlockLoggerHack()
@@ -188,9 +188,9 @@ public final class BlockLoggerHack extends Hack
 	}
 	
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
-		List<Box> allBoxes = new ArrayList<>(blockBoxes);
+		List<AABB> allBoxes = new ArrayList<>(blockBoxes);
 		allBoxes.addAll(loadedBlockBoxes);
 		
 		if(allBoxes.isEmpty())
@@ -209,7 +209,7 @@ public final class BlockLoggerHack extends Hack
 		{
 			int tracerColor = color.getColorI(0x80);
 			RenderUtils.drawTracers(matrixStack, partialTicks,
-				allBoxes.stream().map(Box::getCenter).toList(), tracerColor,
+				allBoxes.stream().map(AABB::getCenter).toList(), tracerColor,
 				false);
 		}
 	}
@@ -226,9 +226,9 @@ public final class BlockLoggerHack extends Hack
 	
 	private void startGetMatchingBlocksTask()
 	{
-		BlockPos eyesPos = BlockPos.ofFloored(RotationUtils.getEyesPos());
+		BlockPos eyesPos = BlockPos.containing(RotationUtils.getEyesPos());
 		Comparator<BlockPos> comparator =
-			Comparator.comparingInt(pos -> eyesPos.getManhattanDistance(pos));
+			Comparator.comparingInt(pos -> eyesPos.distManhattan(pos));
 		
 		getMatchingBlocksTask = forkJoinPool.submit(() -> {
 			HashSet<BlockPos> matchingBlocks = coordinator.getMatches()
@@ -266,7 +266,7 @@ public final class BlockLoggerHack extends Hack
 			notify = false;
 		}
 
-		blockBoxes = matchingBlocks.stream().map(Box::new).toList();
+		blockBoxes = matchingBlocks.stream().map(AABB::new).toList();
 		
 		bufferUpToDate = true;
 	}
@@ -375,7 +375,7 @@ public final class BlockLoggerHack extends Hack
 			// highlight is visible immediately, even before the chunk searcher
 			// has had a chance to scan the area.
 			loadedBlockBoxes =
-				loggedBlocks.stream().map(Box::new).toList();
+				loggedBlocks.stream().map(AABB::new).toList();
 			
 		}catch(Exception e)
 		{

@@ -12,14 +12,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.RenderListener;
@@ -80,34 +80,34 @@ public final class AdvancedItemEspHack extends Hack
 	@Override
 	public void onUpdate()
 	{
-		if(MC.world == null)
+		if(MC.level == null)
 			return;
-		seenEntities.removeIf(id -> MC.world.getEntityById(id) == null);
+		seenEntities.removeIf(id -> MC.level.getEntity(id) == null);
 	}
 
 	@Override
-	public void onRender(MatrixStack matrixStack, float partialTicks)
+	public void onRender(PoseStack matrixStack, float partialTicks)
 	{
-		if(MC.world == null)
+		if(MC.level == null)
 			return;
 
 		count = 0;
-		for(Entity entity : MC.world.getEntities())
+		for(Entity entity : MC.level.entitiesForRendering())
 		{
 			if(!(entity instanceof ItemEntity itemEntity))
 				continue;
 
-			Item item = itemEntity.getStack().getItem();
-			Identifier id = Registries.ITEM.getId(item);
+			Item item = itemEntity.getItem().getItem();
+			Identifier id = BuiltInRegistries.ITEM.getKey(item);
 			if(id == null || !items.getItemNames().contains(id.toString()))
 				continue;
 
 			if(chatFeedback.isChecked() && seenEntities.add(entity.getId()))
-				ChatUtils.message(itemEntity.getStack().getName().getString() + " found at "
+				ChatUtils.message(itemEntity.getItem().getHoverName().getString() + " found at "
 					+ entity.getBlockX() + ", " + entity.getBlockY() + ", "
 					+ entity.getBlockZ());
 
-			Box box = entity.getBoundingBox();
+			AABB box = entity.getBoundingBox();
 			int outline = color.getColorI(0xA0);
 			int fill = color.getColorI(0x30);
 			RenderUtils.drawOutlinedBox(matrixStack, box, outline, false);
@@ -115,7 +115,7 @@ public final class AdvancedItemEspHack extends Hack
 
 			if(tracers.isChecked())
 			{
-				Vec3d center = box.getCenter();
+				Vec3 center = box.getCenter();
 				RenderUtils.drawTracer(matrixStack, partialTicks, center, outline,
 					false);
 			}
