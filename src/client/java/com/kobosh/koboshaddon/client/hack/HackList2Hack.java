@@ -53,7 +53,7 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 		
 		for(Hack hack : allHax)
 		{
-			if(hack == this || visibilitySettings.containsKey(hack))
+			if(visibilitySettings.containsKey(hack))
 				continue;
 			
 			CheckboxSetting setting =
@@ -79,7 +79,7 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 	public void onRenderGUI(GuiGraphicsExtractor context, float partialTicks)
 	{
 		// Refresh settings in case new hacks were added by other addons
-		if(visibilitySettings.size() < WurstClient.INSTANCE.getHax().countHax() - 1)
+		if(visibilitySettings.size() < WurstClient.INSTANCE.getHax().countHax())
 			updateSettings();
 		
 		List<Hack> activeHax = WurstClient.INSTANCE.getHax().getAllHax()
