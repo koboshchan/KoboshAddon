@@ -46,8 +46,22 @@ public final class AntiCrashHack extends Hack implements PacketInputListener
 	@Override
 	public void onReceivedPacket(PacketInputEvent event)
 	{
-		if(event.getPacket() instanceof ClientboundExplodePacket)
+		if(event.getPacket() instanceof ClientboundExplodePacket packet)
+		{
+			net.minecraft.world.phys.Vec3 explodePos = packet.center();
+			net.minecraft.world.phys.Vec3 playerKnockback = new net.minecraft.world.phys.Vec3(0, 0, 0);
+			if(packet.playerKnockback().isPresent()) {
+				playerKnockback = packet.playerKnockback().get();
+			}
+			if(explodePos.x() > 30_000_000 || explodePos.y() > 30_000_000 || explodePos.z() > 30_000_000 ||
+			   explodePos.x() < -30_000_000 || explodePos.y() < -30_000_000 || explodePos.z() < -30_000_000 ||
+			   playerKnockback.x > 30_000_000 || playerKnockback.y > 30_000_000 || playerKnockback.z > 30_000_000 ||
+			   playerKnockback.x < -30_000_000 || playerKnockback.y < -30_000_000 || playerKnockback.z < -30_000_000)
+			{
+				cancel(event);
+			}
 			return;
+		}
 
 		if(event.getPacket() instanceof ClientboundLevelParticlesPacket packet)
 		{
@@ -56,13 +70,33 @@ public final class AntiCrashHack extends Hack implements PacketInputListener
 			return;
 		}
 
-		if(event.getPacket() instanceof ClientboundPlayerPositionPacket)
+		if(event.getPacket() instanceof ClientboundPlayerPositionPacket packet)
+		{
+			net.minecraft.world.phys.Vec3 playerPos = packet.change().position();
+			if(playerPos.x > 30_000_000 || playerPos.y > 30_000_000 || playerPos.z > 30_000_000 ||
+			   playerPos.x < -30_000_000 || playerPos.y < -30_000_000 || playerPos.z < -30_000_000)
+			{
+				cancel(event);
+			}
 			return;
+		}
 
-		if(event.getPacket() instanceof ClientboundSetEntityMotionPacket)
+		if(event.getPacket() instanceof ClientboundSetEntityMotionPacket packet)
 		{
 			if(MC.player == null)
+			{
 				cancel(event);
+				return;
+			}
+			if(packet.id() == MC.player.getId())
+			{
+				net.minecraft.world.phys.Vec3 movement = packet.movement();
+				if(movement.x > 1000 || movement.y > 1000 || movement.z > 1000 ||
+				   movement.x < -1000 || movement.y < -1000 || movement.z < -1000)
+				{
+					cancel(event);
+				}
+			}
 		}
 	}
 

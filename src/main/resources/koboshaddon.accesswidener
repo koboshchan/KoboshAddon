@@ -3,5 +3,11 @@ accessWidener v2 official
 # Allow access to Minecraft.missTime (Official name for itemUseCooldown)
 accessible	field	net/minecraft/client/Minecraft	missTime	I
 
+# Allow access to Minecraft.rightClickDelay
+accessible	field	net/minecraft/client/Minecraft	rightClickDelay	I
+
 # Allow access to AxeItem.STRIPPED_BLOCKS
 accessible	field	net/minecraft/world/item/AxeItem	STRIPPABLES	Ljava/util/Map;
+
+# Allow access to BossHealthOverlay.events
+accessible	field	net/minecraft/client/gui/components/BossHealthOverlay	events	Ljava/util/Map;

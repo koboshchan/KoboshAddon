@@ -44,6 +44,13 @@ import com.kobosh.koboshaddon.client.hack.TeleportHack;
 import com.kobosh.koboshaddon.client.hack.TrialSpawnerEspHack;
 import com.kobosh.koboshaddon.client.hack.UseHack;
 import com.kobosh.koboshaddon.client.hack.VehicleOneHitHack;
+import com.kobosh.koboshaddon.client.hack.AutoOminousHack;
+import com.kobosh.koboshaddon.client.hack.LoginCommandHack;
+import com.kobosh.koboshaddon.client.hack.XPAuraHack;
+import com.kobosh.koboshaddon.client.hack.BungeeCordSpoofHack;
+import com.kobosh.koboshaddon.client.hack.AttributeSwapHack;
+import com.kobosh.koboshaddon.client.hack.GridHack;
+import com.kobosh.koboshaddon.client.hack.DoubleDoorsInteractHack;
 import net.wurstclient.addon.Addon;
 import net.wurstclient.command.Command;
 import net.wurstclient.hack.Hack;
@@ -93,7 +100,14 @@ public final class WurstAddonHackAddon implements Addon {
             new TeleportHack(),
             new TrialSpawnerEspHack(),
             new UseHack(),
-            new VehicleOneHitHack()
+            new VehicleOneHitHack(),
+            new AutoOminousHack(),
+            new LoginCommandHack(),
+            new XPAuraHack(),
+            new BungeeCordSpoofHack(),
+            new AttributeSwapHack(),
+            new GridHack(),
+            new DoubleDoorsInteractHack()
     };
 
     private final Command[] commands = {

@@ -34,5 +34,12 @@
   "description.wurst.hack.spawnerplayeresp": "Highlights player-related mob spawner activity.",
   "description.wurst.hack.teleport": "Teleports you to the block you are currently looking at.",
   "description.wurst.hack.trialspawneresp": "Highlights nearby trial spawners with configurable cooldown filtering.",
-  "description.wurst.hack.vehicleonehit": "Destroys boats and minecarts by sending extra hit packets."
+  "description.wurst.hack.vehicleonehit": "Destroys boats and minecarts by sending extra hit packets.",
+  "description.wurst.hack.autoominous": "Automatically drinks Ominous Bottles when raid effects aren't active.",
+  "description.wurst.hack.logincommand": "Sends configured chat commands automatically when you join a server.",
+  "description.wurst.hack.xpaura": "Automatically teleports to experience orbs within range to pick them up.",
+  "description.wurst.hack.bungeecordspoof": "Spoofs BungeeCord handshake parameters (IP, profile data) on server login.",
+  "description.wurst.hack.attributeswap": "Swaps items in your hotbar to activate specific attributes (such as axes/lunge weapons) on attack.",
+  "description.wurst.hack.grid": "Places blocks automatically on a grid centered on a target block.",
+  "description.wurst.hack.doubledoorsinteract": "Interacts with the other side of double doors simultaneously."
 }
