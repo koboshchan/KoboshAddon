@@ -74,8 +74,10 @@ public final class DoubleDoorsInteractHack extends Hack implements PacketOutputL
 							otherDoorPos,
 							hitResult.isInside()
 						);
-						MC.gameMode.useItemOn(MC.player, packet.getHand(), otherHitResult);
-						isInteracting = false;
+						MC.execute(() -> {
+							MC.gameMode.useItemOn(MC.player, packet.getHand(), otherHitResult);
+							isInteracting = false;
+						});
 					}
 				}
 			}
