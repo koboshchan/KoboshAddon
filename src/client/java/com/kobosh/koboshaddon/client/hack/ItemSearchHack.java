@@ -40,11 +40,11 @@ import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
 import net.wurstclient.settings.FaceTargetSetting;
 import net.wurstclient.settings.FaceTargetSetting.FaceTarget;
+import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
 import net.wurstclient.settings.SwingHandSetting;
 import net.wurstclient.settings.SwingHandSetting.SwingHand;
-import net.wurstclient.settings.TextFieldSetting;
 import net.wurstclient.util.ChatUtils;
 import net.wurstclient.util.chunk.ChunkUtils;
 
@@ -52,9 +52,9 @@ import net.wurstclient.util.chunk.ChunkUtils;
 	"auto search"})
 public final class ItemSearchHack extends Hack implements UpdateListener
 {
-	private final TextFieldSetting targetItem = new TextFieldSetting(
-		"Target item",
-		"The item to search for in chests (e.g., 'minecraft:diamond', 'minecraft:enchanted_book')",
+	private final ItemListSetting targetItem = new ItemListSetting(
+		"Target items",
+		"The items to search for in chests.",
 		"minecraft:diamond");
 	
 	private final SliderSetting range = new SliderSetting("Range",
@@ -116,7 +116,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		foundItem = false;
 		
 		ChatUtils.message(
-			"ItemSearch enabled. Searching for: " + targetItem.getValue());
+			"ItemSearch enabled. Searching for: " + String.join(", ", targetItem.getItemNames()));
 	}
 	
 	@Override
@@ -160,8 +160,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 			findNextChest();
 			if(currentTarget == null)
 			{
-				ChatUtils.warning("No more chests to search. Item '"
-					+ targetItem.getValue() + "' not found.");
+				ChatUtils.warning("No more chests to search. Target items not found.");
 				setEnabled(false);
 				return;
 			}
@@ -176,32 +175,20 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		if(currentTarget == null || foundItem)
 			return;
 		
-		// Get the target item we're looking for
-		Item targetItemType = getItemFromString(targetItem.getValue());
-		if(targetItemType == null)
-		{
-			ChatUtils.error("Invalid target item: " + targetItem.getValue());
-			setEnabled(false);
-			return;
-		}
-		
 		// Check all slots in the chest for our target item
 		boolean itemFound = false;
+		String foundName = "";
 		for(Slot slot : screen.getMenu().slots)
 		{
 			ItemStack stack = slot.getItem();
 			if(stack.isEmpty())
 				continue;
 			
-			boolean matches;
-			if(requireExactMatch.isChecked())
-				matches = stack.getItem() == targetItemType;
-			else
-				matches = stack.is(targetItemType);
-			
-			if(matches)
+			String itemName = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+			if(targetItem.getItemNames().contains(itemName))
 			{
 				itemFound = true;
+				foundName = itemName;
 				break;
 			}
 		}
@@ -209,7 +196,7 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		if(itemFound)
 		{
 			foundItem = true;
-			ChatUtils.message("Found " + targetItem.getValue() + " at "
+			ChatUtils.message("Found " + foundName + " at "
 				+ currentTarget.toShortString()
 				+ "! Keeping chest open and disabling ItemSearch.");
 		}else
@@ -220,52 +207,56 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 			
 			MC.player.closeContainer();
 			currentTarget = null;
-			lastInteractionTime = System.currentTimeMillis();
 		}
 	}
 	
 	private void findNextChest()
 	{
-		LocalPlayer player = MC.player;
-		Vec3 playerPos = new Vec3(player.getX(), player.getY(), player.getZ());
-		double rangeSq = range.getValueSq();
+		Set<BlockPos> chests = findChests();
 		
-		Stream<BlockPos> stream = ChunkUtils.getLoadedBlockEntities()
-			.filter(this::isValidContainer).map(BlockEntity::getBlockPos)
+		currentTarget = chests.stream()
 			.filter(pos -> !searchedChests.contains(pos))
-			.filter(pos -> playerPos
-				.distanceToSqr(Vec3.atCenterOf(pos)) <= rangeSq);
-		
-		currentTarget = stream
-			.min(Comparator.comparingDouble(
-				pos -> playerPos.distanceToSqr(Vec3.atCenterOf(pos))))
+			.min(Comparator.comparingDouble(pos -> MC.player.distanceToSqr(
+				pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5)))
 			.orElse(null);
-		
-		if(currentTarget != null)
-		{
-			ChatUtils.message("Next target: " + getChestTypeAt(currentTarget)
-				+ " at " + currentTarget.toShortString());
-		}
 	}
 	
-	private boolean isValidContainer(BlockEntity be)
+	private Set<BlockPos> findChests()
 	{
-		if(be instanceof ChestBlockEntity)
-			return true;
-		if(be instanceof ShulkerBoxBlockEntity && searchShulkers.isChecked())
-			return true;
-		if(be instanceof HopperBlockEntity && searchHoppers.isChecked())
-			return true;
+		Set<BlockPos> chests = new HashSet<>();
+		int radius = (int)Math.ceil(range.getValue());
+		BlockPos playerPos = MC.player.blockPosition();
 		
-		// Check for barrels if enabled
-		if(searchBarrels.isChecked())
+		for(int x = -radius; x <= radius; x++)
 		{
-			Block block = be.getBlockState().getBlock();
-			if(block == Blocks.BARREL)
-				return true;
+			for(int y = -radius; y <= radius; y++)
+			{
+				for(int z = -radius; z <= radius; z++)
+				{
+					BlockPos pos = playerPos.offset(x, y, z);
+					if(MC.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5,
+						pos.getZ() + 0.5) > range.getValue() * range.getValue())
+						continue;
+					
+					Block block = MC.level.getBlockState(pos).getBlock();
+					boolean isSearchable = block == Blocks.CHEST || block == Blocks.TRAPPED_CHEST;
+					
+					if(!isSearchable && searchShulkers.isChecked())
+						isSearchable = block instanceof net.minecraft.world.level.block.ShulkerBoxBlock;
+						
+					if(!isSearchable && searchHoppers.isChecked())
+						isSearchable = block == Blocks.HOPPER;
+						
+					if(!isSearchable && searchBarrels.isChecked())
+						isSearchable = block == Blocks.BARREL;
+						
+					if(isSearchable)
+						chests.add(pos);
+				}
+			}
 		}
 		
-		return false;
+		return chests;
 	}
 	
 	private String getChestTypeAt(BlockPos pos)
@@ -287,15 +278,16 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	
 	private void interactWithChest()
 	{
-		if(currentTarget == null || MC.player == null)
-			return;
-		
 		LocalPlayer player = MC.player;
 		MultiPlayerGameMode im = MC.gameMode;
 		
-		// Check if we're still in range
-		if(player.distanceToSqr(Vec3.atCenterOf(currentTarget)) > range
-			.getValueSq())
+		if(player == null || im == null || currentTarget == null)
+			return;
+		
+		// Verify distance is still valid
+		double distSqr = MC.player.distanceToSqr(currentTarget.getX() + 0.5,
+			currentTarget.getY() + 0.5, currentTarget.getZ() + 0.5);
+		if(distSqr > range.getValue() * range.getValue())
 		{
 			ChatUtils.warning("Chest at " + currentTarget.toShortString()
 				+ " is out of range.");
@@ -323,19 +315,5 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 		
 		// Set interaction time
 		lastInteractionTime = System.currentTimeMillis();
-	}
-	
-	private Item getItemFromString(String itemId)
-	{
-		try
-		{
-			Identifier id = Identifier.tryParse(itemId);
-			if(id == null)
-				return null;
-			return BuiltInRegistries.ITEM.get(id).map(Holder::value).orElse(null);
-		}catch(Exception e)
-		{
-			return null;
-		}
 	}
 }

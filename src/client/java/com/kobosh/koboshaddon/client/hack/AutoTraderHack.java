@@ -22,9 +22,9 @@ import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
+import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
-import net.wurstclient.settings.TextFieldSetting;
 import net.wurstclient.util.ChatUtils;
 import net.wurstclient.util.InventoryUtils;
 
@@ -32,14 +32,14 @@ import net.wurstclient.util.InventoryUtils;
 	"auto trade"})
 public final class AutoTraderHack extends Hack implements UpdateListener
 {
-	private final TextFieldSetting targetItem = new TextFieldSetting(
-		"Target item",
-		"The item you want to get from villagers (e.g., 'minecraft:emerald', 'minecraft:enchanted_book')",
+	private final ItemListSetting targetItem = new ItemListSetting(
+		"Target items",
+		"The items you want to get from villagers (e.g. 'minecraft:emerald').",
 		"minecraft:emerald");
 	
-	private final TextFieldSetting paymentItem = new TextFieldSetting(
-		"Payment item",
-		"The item you want to trade for the target item (e.g., 'minecraft:wheat', 'minecraft:paper')",
+	private final ItemListSetting paymentItem = new ItemListSetting(
+		"Payment items",
+		"The items you want to trade for the target items (e.g. 'minecraft:wheat').",
 		"minecraft:wheat");
 	
 	private final SliderSetting maxPrice = new SliderSetting("Max price",
@@ -72,9 +72,9 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			"Attempts to buy the reroll target to trigger a reroll when exhausted",
 			false);
 	
-	private final TextFieldSetting rerollTarget = new TextFieldSetting(
+	private final ItemListSetting rerollTarget = new ItemListSetting(
 		"Reroll target",
-		"The item to purchase to trigger a reroll (e.g., 'minecraft:nether_star')",
+		"The items to purchase to trigger a reroll (e.g. 'minecraft:nether_star').",
 		"minecraft:nether_star");
 	
 	private final CheckboxSetting muteChatLogs = new CheckboxSetting(
@@ -199,12 +199,6 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 	private MerchantOffer findTargetTrade(MerchantOffers offers,
                                           boolean filterDisabled)
 	{
-		Item targetItemType = getItemFromString(targetItem.getValue());
-		Item paymentItemType = getItemFromString(paymentItem.getValue());
-		
-		if(targetItemType == null || paymentItemType == null)
-			return null;
-		
 		for(int i = 0; i < offers.size(); i++)
 		{
 			MerchantOffer offer = offers.get(i);
@@ -216,29 +210,17 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 			
 			// Check if this trade gives us our target item
 			ItemStack sellItem = offer.getResult();
-			boolean matchesTarget;
-			
-			if(requireExactItem.isChecked())
-				matchesTarget = sellItem.getItem() == targetItemType;
-			else
-				matchesTarget = sellItem.is(targetItemType);
-			
-			if(!matchesTarget)
+			String sellItemName = BuiltInRegistries.ITEM.getKey(sellItem.getItem()).toString();
+			if(!targetItem.getItemNames().contains(sellItemName))
 				continue;
 			
 			// Check if we can pay for it with our payment item
 			ItemStack firstBuyItem = offer.getBaseCostA();
+			String paymentItemName = BuiltInRegistries.ITEM.getKey(firstBuyItem.getItem()).toString();
+			if(!paymentItem.getItemNames().contains(paymentItemName))
+				continue;
 			
-			boolean canAfford = false;
-			
-			// Check first buy item
-			if(firstBuyItem.is(paymentItemType)
-				&& firstBuyItem.getCount() <= maxPrice.getValueI())
-			{
-				canAfford = true;
-			}
-			
-			if(canAfford)
+			if(firstBuyItem.getCount() <= maxPrice.getValueI())
 				return offer;
 		}
 		
@@ -247,13 +229,10 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 	
 	private MerchantOffer findRerollTargetTrade(MerchantOffers offers)
 	{
-		Item rerollItemType = getItemFromString(rerollTarget.getValue());
-		if(rerollItemType == null)
-			return null;
-		
 		for(MerchantOffer offer : offers)
 		{
-			if(offer.getResult().is(rerollItemType))
+			String sellItemName = BuiltInRegistries.ITEM.getKey(offer.getResult().getItem()).toString();
+			if(rerollTarget.getItemNames().contains(sellItemName))
 				return offer;
 		}
 		
@@ -320,19 +299,5 @@ public final class AutoTraderHack extends Hack implements UpdateListener
 		}
 		
 		return true;
-	}
-	
-	private Item getItemFromString(String itemId)
-	{
-		try
-		{
-			Identifier id = Identifier.tryParse(itemId);
-			if(id == null)
-				return null;
-			return BuiltInRegistries.ITEM.get(id).map(Holder::value).orElse(null);
-		}catch(Exception e)
-		{
-			return null;
-		}
 	}
 }

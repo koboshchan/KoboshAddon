@@ -34,12 +34,11 @@ public final class ExplorationHack extends Hack implements UpdateListener
 	private final TextFieldSetting endZ = new TextFieldSetting("End Z",
 		"Ending Z coordinate for exploration", "-1000");
 	
-	private final TextFieldSetting exploreHeight =
-		new TextFieldSetting("Explore Height",
-			"Height (Y coordinate) to maintain while exploring", "200");
+	private final SliderSetting exploreHeight = new SliderSetting("Explore Height",
+		"Height (Y coordinate) to maintain while exploring.", 200, -64, 320, 1, ValueDisplay.INTEGER);
 	
-	private final TextFieldSetting pathWidth = new TextFieldSetting(
-		"Path Width", "Width of each exploration path", "100");
+	private final SliderSetting pathWidth = new SliderSetting("Path Width",
+		"Width of each exploration path.", 100, 1, 1000, 1, ValueDisplay.INTEGER);
 	
 	private final SliderSetting speed =
 		new SliderSetting("Speed", "Speed of movement towards target", 1.0, 0.1,
@@ -105,12 +104,6 @@ public final class ExplorationHack extends Hack implements UpdateListener
 			startZInt = Integer.parseInt(startZ.getValue());
 			endXInt = Integer.parseInt(endX.getValue());
 			endZInt = Integer.parseInt(endZ.getValue());
-			exploreHeightInt = Integer.parseInt(exploreHeight.getValue());
-			pathWidthInt = Math.abs(Integer.parseInt(pathWidth.getValue()));
-			
-			if(pathWidthInt == 0)
-				pathWidthInt = 1;
-			
 		}catch(NumberFormatException e)
 		{
 			ChatUtils.error(
@@ -118,6 +111,11 @@ public final class ExplorationHack extends Hack implements UpdateListener
 			setEnabled(false);
 			return;
 		}
+		
+		exploreHeightInt = exploreHeight.getValueI();
+		pathWidthInt = pathWidth.getValueI();
+		if(pathWidthInt == 0)
+			pathWidthInt = 1;
 		
 		// Validate coordinates
 		if(startXInt == endXInt || startZInt == endZInt)

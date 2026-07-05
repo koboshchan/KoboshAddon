@@ -52,7 +52,7 @@ public final class AttributeSwapHack extends Hack implements LeftClickListener, 
 
 	public AttributeSwapHack()
 	{
-		super("AttributeSwap");
+		super("AttribSwap");
 		setCategory(Category.COMBAT);
 		addSetting(autoLunge);
 		addSetting(shieldBreaker);

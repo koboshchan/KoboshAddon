@@ -22,15 +22,14 @@ import net.wurstclient.util.ChatUtils;
 	"outward exploration"})
 public final class InfiniteExplorerHack extends Hack implements UpdateListener
 {
-	private final TextFieldSetting diameter = new TextFieldSetting("Diameter",
-		"Diameter of the circular exploration area", "2000");
+	private final SliderSetting diameter = new SliderSetting("Diameter",
+		"Diameter of the circular exploration area.", 2000, 100, 50000, 100, ValueDisplay.INTEGER);
 	
-	private final TextFieldSetting exploreHeight =
-		new TextFieldSetting("Explore Height",
-			"Height (Y coordinate) to maintain while exploring", "200");
+	private final SliderSetting exploreHeight = new SliderSetting("Explore Height",
+		"Height (Y coordinate) to maintain while exploring.", 200, -64, 320, 1, ValueDisplay.INTEGER);
 	
-	private final TextFieldSetting stepSize = new TextFieldSetting("Step Size",
-		"Distance between exploration points", "50");
+	private final SliderSetting stepSize = new SliderSetting("Step Size",
+		"Distance between exploration points.", 50, 1, 500, 1, ValueDisplay.INTEGER);
 	
 	private final SliderSetting speed =
 		new SliderSetting("Speed", "Speed of movement towards target", 1.0, 0.1,
@@ -52,9 +51,9 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 	private enum Direction
 	{
 		RIGHT(1, 0),
-		DOWN(0, 1),
+		UP(0, -1),
 		LEFT(-1, 0),
-		UP(0, -1);
+		DOWN(0, 1);
 		
 		private final int deltaX;
 		private final int deltaZ;
@@ -116,25 +115,14 @@ public final class InfiniteExplorerHack extends Hack implements UpdateListener
 	@Override
 	protected void onEnable()
 	{
-		// Parse settings
-		try
-		{
-			diameterInt = Math.abs(Integer.parseInt(diameter.getValue()));
-			exploreHeightInt = Integer.parseInt(exploreHeight.getValue());
-			stepSizeInt = Math.abs(Integer.parseInt(stepSize.getValue()));
-			
-			if(stepSizeInt == 0)
-				stepSizeInt = 1;
-			if(diameterInt == 0)
-				diameterInt = 200;
-			
-		}catch(NumberFormatException e)
-		{
-			ChatUtils
-				.error("Invalid values. Please enter valid positive integers.");
-			setEnabled(false);
-			return;
-		}
+		diameterInt = Math.abs(diameter.getValueI());
+		exploreHeightInt = exploreHeight.getValueI();
+		stepSizeInt = Math.abs(stepSize.getValueI());
+		
+		if(stepSizeInt == 0)
+			stepSizeInt = 1;
+		if(diameterInt == 0)
+			diameterInt = 200;
 		
 		// Initialize spiral exploration from current position
 		centerPos = new BlockPos((int)MC.player.getX(), exploreHeightInt,

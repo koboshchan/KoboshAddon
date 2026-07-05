@@ -28,6 +28,7 @@ import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
 import net.wurstclient.settings.ColorSetting;
+import net.wurstclient.settings.EspStyleSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.util.BlockUtils;
 import net.wurstclient.util.RenderUtils;
@@ -43,8 +44,7 @@ public final class OreSimHack extends Hack
 	private final CheckboxSetting checkExposed = new CheckboxSetting("Air-check",
 		"Only render ores with at least one exposed face.", true);
 
-	private final CheckboxSetting tracers =
-		new CheckboxSetting("Tracers", "Draw tracers to rendered ores.", false);
+	private final EspStyleSetting style = new EspStyleSetting();
 
 	private final ColorSetting color = new ColorSetting("Color",
 		"Color used for rendered ore boxes.", new Color(255, 170, 0));
@@ -58,7 +58,7 @@ public final class OreSimHack extends Hack
 		setCategory(Category.RENDER);
 		addSetting(range);
 		addSetting(checkExposed);
-		addSetting(tracers);
+		addSetting(style);
 		addSetting(color);
 	}
 
@@ -118,10 +118,14 @@ public final class OreSimHack extends Hack
 		for(BlockPos pos : ores)
 		{
 			AABB box = new AABB(pos);
-			RenderUtils.drawOutlinedBox(matrixStack, box, lineColor, false);
-			RenderUtils.drawSolidBox(matrixStack, box, fillColor, false);
+			
+			if(style.hasBoxes())
+			{
+				RenderUtils.drawOutlinedBox(matrixStack, box, lineColor, false);
+				RenderUtils.drawSolidBox(matrixStack, box, fillColor, false);
+			}
 
-			if(tracers.isChecked())
+			if(style.hasLines())
 				RenderUtils.drawTracer(matrixStack, partialTicks,
 					Vec3.atCenterOf(pos), lineColor, false);
 		}

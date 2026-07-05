@@ -39,7 +39,7 @@
   "description.wurst.hack.logincommand": "Sends configured chat commands automatically when you join a server.",
   "description.wurst.hack.xpaura": "Automatically teleports to experience orbs within range to pick them up.",
   "description.wurst.hack.bungeecordspoof": "Spoofs BungeeCord handshake parameters (IP, profile data) on server login.",
-  "description.wurst.hack.attributeswap": "Swaps items in your hotbar to activate specific attributes (such as axes/lunge weapons) on attack.",
+  "description.wurst.hack.attribswap": "Swaps items in your hotbar to activate specific attributes (such as axes/lunge weapons) on attack.",
   "description.wurst.hack.grid": "Places blocks automatically on a grid centered on a target block.",
   "description.wurst.hack.doubledoorsinteract": "Interacts with the other side of double doors simultaneously."
 }

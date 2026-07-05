@@ -11,13 +11,14 @@ import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
-import net.wurstclient.settings.TextFieldSetting;
+import net.wurstclient.settings.SliderSetting;
+import net.wurstclient.settings.SliderSetting.ValueDisplay;
 
 @SearchTags({"air walk", "airwalk", "air walk hack"})
 public final class AirWalkHack extends Hack implements UpdateListener
 {
-	private final TextFieldSetting yHeight =
-		new TextFieldSetting("Y-height", "The Y-level you walk on.", "64");
+	private final SliderSetting yHeight = new SliderSetting("Y-height",
+		"The Y-level you walk on.", 64, -64, 320, 1, ValueDisplay.INTEGER);
 	
 	public AirWalkHack()
 	{
@@ -44,12 +45,7 @@ public final class AirWalkHack extends Hack implements UpdateListener
 		if(MC.player == null)
 			return;
 		
-		double targetY = 64;
-		try
-		{
-			targetY = Double.parseDouble(yHeight.getValue());
-		}catch(NumberFormatException e)
-		{}
+		double targetY = yHeight.getValue();
 		
 		// If player is falling through the target Y, stop them
 		if(MC.player.getY() <= targetY && MC.player.getDeltaMovement().y < 0)

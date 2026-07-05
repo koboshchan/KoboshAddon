@@ -35,9 +35,9 @@ import net.wurstclient.SearchTags;
 import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
+import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
-import net.wurstclient.settings.TextFieldSetting;
 import net.wurstclient.hacks.autolibrarian.BookOffer;
 import net.wurstclient.settings.BookOffersSetting;
 import net.wurstclient.util.ChatUtils;
@@ -60,10 +60,9 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		"minecraft:respiration;3", "minecraft:sharpness;5",
 		"minecraft:silk_touch;1", "minecraft:unbreaking;3");
 	
-	private final TextFieldSetting rerollItem = new TextFieldSetting(
+	private final ItemListSetting rerollItem = new ItemListSetting(
 		"Reroll item",
-		"Item to buy from the villager to trigger a plugin trade refresh"
-			+ " (e.g. 'minecraft:nether_star').",
+		"Item to buy from the villager to trigger a plugin trade refresh.",
 		"minecraft:nether_star");
 	
 	private final SliderSetting maxRerolls = new SliderSetting("Max rerolls",
@@ -306,7 +305,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		if(rerollIndex < 0)
 		{
 			ChatUtils.error("AutoLibrarian2: Could not find reroll item '"
-				+ rerollItem.getValue() + "' in villager's trades.");
+				+ String.join(", ", rerollItem.getItemNames()) + "' in villager's trades.");
 			MC.player.closeContainer();
 			setEnabled(false);
 			return;
@@ -331,15 +330,12 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 			2, 0, ContainerInput.PICKUP, MC.player);
 		
 		rerollCount++;
-		
-		if(!muteChatLogs.isChecked())
-			ChatUtils.message("AutoLibrarian2: Bought reroll item (attempt "
-				+ rerollCount + "/" + maxRerolls.getValueI() + ").");
-		
-		// Close and wait for plugin to reset trades
-		MC.player.closeContainer();
 		state = State.WAIT_FOR_REOPEN;
 		lastActionTime = System.currentTimeMillis();
+		
+		if(!muteChatLogs.isChecked())
+			ChatUtils.message("AutoLibrarian2: Buying reroll item (attempt "
+				+ rerollCount + "/" + maxRerolls.getValueI() + ")");
 	}
 	
 	private void waitForReopen()
@@ -389,13 +385,10 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	
 	private int findRerollItemIndex(MerchantOffers offers)
 	{
-		Item rerollItemType = getItemFromString(rerollItem.getValue());
-		if(rerollItemType == null)
-			return -1;
-		
 		for(int i = 0; i < offers.size(); i++)
 		{
-			if(offers.get(i).getResult().is(rerollItemType))
+			String name = BuiltInRegistries.ITEM.getKey(offers.get(i).getResult().getItem()).toString();
+			if(rerollItem.getItemNames().contains(name))
 				return i;
 		}
 		return -1;
@@ -436,19 +429,5 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		}
 		
 		return true;
-	}
-	
-	private Item getItemFromString(String itemId)
-	{
-		try
-		{
-			Identifier id = Identifier.tryParse(itemId);
-			if(id == null)
-				return null;
-			return BuiltInRegistries.ITEM.get(id).map(Holder::value).orElse(null);
-		}catch(Exception e)
-		{
-			return null;
-		}
 	}
 }
