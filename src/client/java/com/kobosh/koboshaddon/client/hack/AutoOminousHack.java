@@ -7,18 +7,21 @@ import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.wurstclient.Category;
 import net.wurstclient.SearchTags;
 import net.wurstclient.WurstClient;
 import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
+import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.util.InventoryUtils;
 
 @SearchTags({"auto ominous", "ominous bottle", "auto drink"})
 public final class AutoOminousHack extends Hack implements UpdateListener
 {
+	private final ItemListSetting items = new ItemListSetting("Items",
+		"Items to automatically drink.", "minecraft:ominous_bottle");
+
 	private final CheckboxSetting pauseAuras = new CheckboxSetting("Pause Auras",
 		"Pauses combat hacks while drinking.", true);
 
@@ -40,6 +43,7 @@ public final class AutoOminousHack extends Hack implements UpdateListener
 	{
 		super("AutoOminous");
 		setCategory(Category.COMBAT);
+		addSetting(items);
 		addSetting(pauseAuras);
 	}
 
@@ -119,7 +123,8 @@ public final class AutoOminousHack extends Hack implements UpdateListener
 		for(int i = 0; i < 9; i++)
 		{
 			ItemStack stack = inventory.getItem(i);
-			if(stack.getItem() == Items.OMINOUS_BOTTLE)
+			String name = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+			if(items.getItemNames().contains(name))
 				return i;
 		}
 		return -1;
