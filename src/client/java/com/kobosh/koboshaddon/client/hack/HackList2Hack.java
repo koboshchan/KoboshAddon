@@ -64,6 +64,12 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 	}
 	
 	@Override
+	public void onSettingsLoading()
+	{
+		updateSettings();
+	}
+
+	@Override
 	public void onEnable()
 	{
 		EVENTS.add(GUIRenderListener.class, this);
