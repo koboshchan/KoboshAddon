@@ -21,23 +21,29 @@ import net.minecraft.world.phys.AABB;
 import net.wurstclient.Category;
 import net.wurstclient.events.GUIRenderListener;
 import net.wurstclient.events.RenderListener;
+import net.wurstclient.events.RightClickListener;
 import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.util.ChatUtils;
 import net.wurstclient.util.RenderUtils;
+import net.wurstclient.settings.CheckboxSetting;
 
 public final class NBTViewerHack extends Hack
-	implements UpdateListener, RenderListener, GUIRenderListener
+	implements UpdateListener, RenderListener, GUIRenderListener, RightClickListener
 {
 	private BlockPos posLookingAt;
 	private BlockPos selectedPos;
 	private String nbtData;
 	private boolean showingNBT;
 	
+	private final CheckboxSetting showInstructions = new CheckboxSetting(
+		"Show instructions", "Show the instruction message in the middle of the screen.", true);
+	
 	public NBTViewerHack()
 	{
 		super("NBTViewer");
 		setCategory(Category.RENDER);
+		addSetting(showInstructions);
 	}
 	
 	@Override
@@ -51,6 +57,7 @@ public final class NBTViewerHack extends Hack
 		EVENTS.add(UpdateListener.class, this);
 		EVENTS.add(RenderListener.class, this);
 		EVENTS.add(GUIRenderListener.class, this);
+		EVENTS.add(RightClickListener.class, this);
 	}
 	
 	@Override
@@ -59,6 +66,7 @@ public final class NBTViewerHack extends Hack
 		EVENTS.remove(UpdateListener.class, this);
 		EVENTS.remove(RenderListener.class, this);
 		EVENTS.remove(GUIRenderListener.class, this);
+		EVENTS.remove(RightClickListener.class, this);
 		
 		posLookingAt = null;
 		selectedPos = null;
@@ -78,31 +86,26 @@ public final class NBTViewerHack extends Hack
 		if(MC.hitResult instanceof BlockHitResult)
 		{
 			posLookingAt = ((BlockHitResult)MC.hitResult).getBlockPos();
-			
-			// Offset if sneaking (to select air blocks or adjacent positions)
-			if(MC.options.keyShift.isDown())
-				posLookingAt = posLookingAt
-					.relative(((BlockHitResult)MC.hitResult).getDirection());
-			
 		}else
 			posLookingAt = null;
 		
-		// Select block and show NBT data (wasPressed consumes one queued press per
-		// call, so NBT is fetched exactly once per right-click regardless of how
-		// long the button is held or whether a GUI opens afterward)
-		if(posLookingAt != null && MC.options.keyUse.consumeClick())
-		{
-			selectedPos = posLookingAt;
-			showNBTData(selectedPos);
-		}
-		
 		// Close NBT view with ESC
-		if(showingNBT && InputConstants.isKeyDown(MC.getWindow(),
+		if(showingNBT && MC.gui.screen() == null && InputConstants.isKeyDown(MC.getWindow(),
 			GLFW.GLFW_KEY_ESCAPE))
 		{
 			showingNBT = false;
 			nbtData = null;
 			selectedPos = null;
+		}
+	}
+	
+	@Override
+	public void onRightClick(RightClickEvent event)
+	{
+		if(posLookingAt != null)
+		{
+			selectedPos = posLookingAt;
+			showNBTData(selectedPos);
 		}
 	}
 	
@@ -223,8 +226,6 @@ public final class NBTViewerHack extends Hack
 	@Override
 	public void onRenderGUI(GuiGraphicsExtractor context, float partialTicks)
 	{
-		String message;
-		
 		if(showingNBT && nbtData != null)
 		{
 			// Show NBT data in a scrollable window
@@ -232,7 +233,10 @@ public final class NBTViewerHack extends Hack
 			return;
 		}
 		
-		// Show instruction message
+		if(!showInstructions.isChecked())
+			return;
+		
+		String message;
 		if(selectedPos != null)
 			message =
 				"Block selected. Look at another block and right-click to view its NBT data, or press ESC to clear.";
