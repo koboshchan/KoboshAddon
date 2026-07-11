@@ -5,6 +5,8 @@ import com.kobosh.koboshaddon.client.command.ExploreCmd;
 import com.kobosh.koboshaddon.client.command.FlyToCmd;
 import com.kobosh.koboshaddon.client.command.NbtCmd;
 import com.kobosh.koboshaddon.client.command.ViewLogsCmd;
+import com.kobosh.koboshaddon.client.command.AliasCmd;
+import com.kobosh.koboshaddon.client.command.ACmd;
 import com.kobosh.koboshaddon.client.hack.AdvancedItemEspHack;
 import com.kobosh.koboshaddon.client.hack.AirWalkHack;
 import com.kobosh.koboshaddon.client.hack.AntiCrashHack;
@@ -115,7 +117,9 @@ public final class WurstAddonHackAddon implements Addon {
             new ExploreCmd(),
             new FlyToCmd(),
             new NbtCmd(),
-            new ViewLogsCmd()
+            new ViewLogsCmd(),
+            new AliasCmd(),
+            new ACmd()
     };
 
     public WurstAddonHackAddon() {
