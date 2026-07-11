@@ -65,6 +65,7 @@ public final class FastExcavatorHack extends Hack
 	private ExcavatorPathFinder pathFinder;
 	private PathProcessor processor;
 	private int lastActiveMinY = -1;
+	private final HashSet<BlockPos> unreachableBlocks = new HashSet<>();
 	
 	public FastExcavatorHack()
 	{
@@ -107,6 +108,7 @@ public final class FastExcavatorHack extends Hack
 		
 		step = Step.START_POS;
 		lastActiveMinY = -1;
+		unreachableBlocks.clear();
 		
 		EVENTS.add(UpdateListener.class, this);
 		EVENTS.add(RenderListener.class, this);
@@ -132,6 +134,7 @@ public final class FastExcavatorHack extends Hack
 		pathFinder = null;
 		processor = null;
 		PathProcessor.releaseControls();
+		unreachableBlocks.clear();
 	}
 	
 	@Override
@@ -339,7 +342,7 @@ public final class FastExcavatorHack extends Hack
 		int highestRemainingY = -1;
 		for(BlockPos pos : area.blocksList)
 		{
-			if(pBreakable.test(pos))
+			if(pBreakable.test(pos) && !unreachableBlocks.contains(pos))
 			{
 				if(pos.getY() > highestRemainingY)
 					highestRemainingY = pos.getY();
@@ -411,10 +414,19 @@ public final class FastExcavatorHack extends Hack
 			return;
 		}
 		
+		if(pathFinder != null && pathFinder.isFailed())
+		{
+			unreachableBlocks.add(pathFinder.getGoal());
+			pathFinder = null;
+			processor = null;
+			PathProcessor.releaseControls();
+		}
+		
 		if(pathFinder == null)
 		{
 			BlockPos closestBlock = area.blocksList.parallelStream()
 				.filter(pBreakable)
+				.filter(pos -> !unreachableBlocks.contains(pos))
 				.filter(pos -> pos.getY() >= activeMinY && pos.getY() <= activeMaxY)
 				.min(cNextTargetBlock).orElse(null);
 			
