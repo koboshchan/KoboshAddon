@@ -41,6 +41,7 @@ import com.kobosh.koboshaddon.client.hack.ItemTpHack;
 import com.kobosh.koboshaddon.client.hack.NBTViewerHack;
 import com.kobosh.koboshaddon.client.hack.OpSignHack;
 import com.kobosh.koboshaddon.client.hack.OreSimHack;
+import com.kobosh.koboshaddon.client.hack.PlayerESP2Hack;
 import com.kobosh.koboshaddon.client.hack.SpawnerPlayerEspHack;
 import com.kobosh.koboshaddon.client.hack.StripAuraHack;
 import com.kobosh.koboshaddon.client.hack.TeleportHack;
@@ -100,6 +101,7 @@ public final class WurstAddonHackAddon implements Addon {
             new OpSignHack(),
             new OreSimHack(),
             new SpawnerPlayerEspHack(),
+            new PlayerESP2Hack(),
             new StripAuraHack(),
             new TeleportHack(),
             new TrialSpawnerEspHack(),
