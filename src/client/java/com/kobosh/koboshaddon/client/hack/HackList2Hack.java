@@ -35,7 +35,7 @@ public final class HackList2Hack extends Hack implements GUIRenderListener
 	
 	public HackList2Hack()
 	{
-		super("HackList2");
+		super("HackList");
 		setCategory(Category.RENDER);
 		addSetting(color);
 		addSetting(position);

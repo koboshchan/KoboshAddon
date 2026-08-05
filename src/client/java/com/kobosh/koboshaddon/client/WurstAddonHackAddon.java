@@ -1,5 +1,7 @@
 package com.kobosh.koboshaddon.client;
 
+import java.util.Set;
+
 import com.kobosh.koboshaddon.client.command.AutoCraftCmd;
 import com.kobosh.koboshaddon.client.command.ExploreCmd;
 import com.kobosh.koboshaddon.client.command.FlyToCmd;
@@ -140,6 +142,11 @@ public final class WurstAddonHackAddon implements Addon {
     @Override
     public Hack[] getHacks() {
         return hacks;
+    }
+
+    @Override
+    public Set<String> getOverriddenHackNames() {
+        return Set.of("HackList", "PlayerESP", "AutoLibrarian");
     }
 
     @Override

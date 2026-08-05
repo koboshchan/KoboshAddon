@@ -53,7 +53,7 @@ public final class PlayerESP2Hack extends Hack implements UpdateListener,
 	
 	public PlayerESP2Hack()
 	{
-		super("PlayerESP2");
+		super("PlayerESP");
 		setCategory(Category.RENDER);
 		addSetting(style);
 		addSetting(boxSize);

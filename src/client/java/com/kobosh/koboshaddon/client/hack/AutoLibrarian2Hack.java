@@ -103,7 +103,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 	
 	public AutoLibrarian2Hack()
 	{
-		super("AutoLibrarian2");
+		super("AutoLibrarian");
 		setCategory(Category.OTHER);
 		addSetting(wantedBooks);
 		addSetting(rerollItem);
