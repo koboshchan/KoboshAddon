@@ -6,7 +6,9 @@
   "client": [
     "EntityRenderStateAccessor",
     "EntityRendererMixin",
-    "ClientIntentionPacketMixin"
+    "ClientIntentionPacketMixin",
+    "FeatureInvoker",
+    "WurstLogoOtfMixin"
   ],
   "injectors": {
     "defaultRequire": 1
