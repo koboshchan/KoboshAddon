@@ -14,11 +14,11 @@ import net.minecraft.network.chat.Component;
 import net.wurstclient.WurstClient;
 import net.wurstclient.hack.Hack;
 
-@Mixin(targets = "net.minecraft.class_897", priority = 500)
+@Mixin(value = net.minecraft.client.renderer.entity.EntityRenderer.class, priority = 500)
 public abstract class EntityRendererMixin<T extends Entity, S extends EntityRenderState>
 {
 	@Inject(
-		method = "method_62354(Lnet/minecraft/class_1297;Lnet/minecraft/class_10017;F)V",
+		method = "extractRenderState(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/entity/state/EntityRenderState;F)V",
 		remap = false,
 		at = @At("TAIL"))
 	private void addCoordToDisplayName(T entity, S state, float tickProgress,
