@@ -154,3 +154,38 @@ publishing {
         // retrieving dependencies.
     }
 }
+
+// Keep the addon independent of the selected vanilla graphics backend.
+// Check bytecode as well as source so fully-qualified calls cannot slip in.
+tasks.register('verifyBackendIndependentRendering') {
+    group = 'verification'
+    description = 'Rejects OpenGL-only calls in addon sources and compiled classes.'
+    dependsOn tasks.named('classes'), tasks.named('clientClasses')
+    def sources = fileTree('src') { include '**/*.java' }
+    def bytecode = files(sourceSets.main.output.classesDirs,
+        sourceSets.client.output.classesDirs).asFileTree
+    inputs.files(sources, bytecode)
+    doLast {
+        def forbidden = [
+            'org/lwjgl/opengl/', 'com/mojang/blaze3d/opengl/',
+            'com/mojang/blaze3d/platform/GlStateManager'
+        ]
+        def violations = []
+        (sources.files + bytecode.files.findAll { it.name.endsWith('.class') }).each { entry ->
+            def content = new String(entry.bytes, java.nio.charset.StandardCharsets.ISO_8859_1)
+                .replace('.', '/')
+            forbidden.each { api ->
+                if (content.contains(api))
+                    violations.add("${entry}: ${api}")
+            }
+        }
+        if (!violations.isEmpty())
+            throw new GradleException('Backend-specific rendering is forbidden:\n' +
+                violations.join('\n'))
+        logger.lifecycle("Verified backend-independent rendering in ${sources.files.size()} sources and compiled addon classes.")
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('verifyBackendIndependentRendering')
+}

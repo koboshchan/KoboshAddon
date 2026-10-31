@@ -7,20 +7,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
         fetch-depth: 0
 
-    - name: Checkout Wurst7 correct branch
+    # checkout already restores the exact gitlink. Never replace it with a
+    # moving branch (or a PR's untrusted ref_name).
+    - name: Verify pinned Wurst7 dependency
       run: |
-        cd wurst7-base
-        git fetch origin
-        git checkout ${{ github.ref_name }} || echo "Branch not found in submodule, staying on default."
-        cd ..
+        expected="$(git rev-parse HEAD:wurst7-base)"
+        actual="$(git -C wurst7-base rev-parse HEAD)"
+        test "$actual" = "$expected"
+        echo "Wurst7 dependency $actual"
 
     - name: Set up JDK 25
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '25'
         distribution: 'temurin'
@@ -30,13 +32,13 @@ jobs:
       run: |
         cd wurst7-base
         chmod +x gradlew
-        ./gradlew build -x test
+        ./gradlew --no-daemon build -x test
         cd ..
 
     - name: Build WurstAddon
       run: |
         chmod +x gradlew
-        ./gradlew build
+        ./gradlew --no-daemon clean build
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -46,6 +48,7 @@ jobs:
           build/libs/*.jar
           wurst7-base/build/libs/*.jar
         retention-days: 30
+        if-no-files-found: error
 
     - name: Create Release (on tag)
       if: startsWith(github.ref, 'refs/tags/')
