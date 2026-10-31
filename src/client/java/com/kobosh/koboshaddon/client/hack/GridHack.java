@@ -175,7 +175,7 @@ public final class GridHack extends Hack implements UpdateListener, RenderListen
 	{
 		int r = (int)switchRange.getValue();
 		BlockPos playerPos = MC.player.blockPosition();
-		for(BlockPos pos : BlockPos.withinManhattan(playerPos, r, r, r))
+		for(BlockPos pos : BlockPos.withinBoxByManhattanDistance(playerPos, r, r, r))
 		{
 			Block block = MC.level.getBlockState(pos).getBlock();
 			if(blocksSetting.contains(block))
@@ -216,7 +216,7 @@ public final class GridHack extends Hack implements UpdateListener, RenderListen
 
 	private boolean placeBlock(BlockPos pos, int itemSlot)
 	{
-		Vec3 eyesPos = RotationUtils.getEyesPos();
+		Vec3 eyesPos = MC.player.getEyePosition();
 
 		for(Direction side : Direction.values())
 		{
@@ -240,8 +240,8 @@ public final class GridHack extends Hack implements UpdateListener, RenderListen
 			InventoryUtils.selectItem(itemSlot);
 
 			RotationUtils.getNeededRotations(hitVec).sendPlayerLookPacket();
-			IMC.getInteractionManager().rightClickBlock(neighbor, side2, hitVec);
-			MC.player.swing(InteractionHand.MAIN_HAND);
+			((net.wurstclient.mixinterface.IMultiPlayerGameMode)MC.gameMode).rightClickBlock(neighbor, side2, hitVec);
+			MC.player.swing(InteractionHand.MAIN_HAND, MC.player.getMainHandItem().getInteractAnimation(), false);
 			MC.rightClickDelay = 4;
 
 			InventoryUtils.selectItem(prev);

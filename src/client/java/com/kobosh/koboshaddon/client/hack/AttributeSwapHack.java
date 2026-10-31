@@ -8,7 +8,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -153,7 +153,7 @@ public final class AttributeSwapHack extends Hack implements LeftClickListener, 
 				for(int i = 0; i < 9; i++)
 				{
 					ItemStack stack = MC.player.getInventory().getItem(i);
-					if(stack.getItem() instanceof AxeItem)
+					if(stack.is(ItemTags.AXES))
 					{
 						InventoryUtils.selectItem(i);
 						didSwap = true;

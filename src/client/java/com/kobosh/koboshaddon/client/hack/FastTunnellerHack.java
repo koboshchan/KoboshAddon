@@ -3,7 +3,6 @@ package com.kobosh.koboshaddon.client.hack;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Options;
@@ -168,7 +167,7 @@ public final class FastTunnellerHack extends Hack
 		}
 
 		// Sort blocks: top-to-bottom, closest first
-		Vec3 eyesVec = RotationUtils.getEyesPos();
+		Vec3 eyesVec = MC.player.getEyePosition();
 		Comparator<BlockPos> cNextTargetBlock =
 			Comparator.<BlockPos> comparingInt(BlockPos::getY).reversed()
 				.thenComparingDouble(pos -> pos.distToCenterSqr(eyesVec));

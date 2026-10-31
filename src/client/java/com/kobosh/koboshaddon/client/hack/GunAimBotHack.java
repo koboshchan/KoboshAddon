@@ -44,7 +44,7 @@ public final class GunAimBotHack extends Hack
 			30, 360, 10, ValueDisplay.DEGREES);
 	
 	private final AimAtSetting aimAt =
-		new AimAtSetting("What point in the target's hitbox to aim at.");
+		new AimAtSetting(net.wurstclient.util.text.WText.literal("What point in the target's hitbox to aim at."), net.wurstclient.settings.AimAtSetting.AimAt.CENTER);
 	
 	private final SliderSetting ignoreMouseInput = new SliderSetting(
 		"Ignore mouse input", "How much to ignore existing mouse movement.", 0,
@@ -149,7 +149,7 @@ public final class GunAimBotHack extends Hack
 			Vec3 aimPoint = aimAt.getAimPoint(target);
 			
 			// Use movement prediction but maintain the aim point offset
-			double d = RotationUtils.getEyesPos()
+			double d = MC.player.getEyePosition()
 				.distanceTo(target.getBoundingBox().getCenter())
 				* predictMovement.getValue();
 			double posX =
@@ -208,7 +208,7 @@ public final class GunAimBotHack extends Hack
 	
 	private void chooseTarget()
 	{
-		Stream<Entity> stream = EntityUtils.getAttackableEntities();
+		Stream<Entity> stream = EntityUtils.getEntities().filter(EntityUtils.IS_ATTACKABLE_RANGED);
 		
 		// Only target players
 		stream = stream.filter(e -> e instanceof Player);

@@ -46,8 +46,8 @@ public final class PlayerESP2Hack extends Hack implements UpdateListener,
 		"Ignore friends", "Won't show players on your friends list.", true);
 
 	private final EntityFilterList entityFilters = new EntityFilterList(
-		new FilterSleepingSetting("Won't show sleeping players.", false),
-		new FilterInvisibleSetting("Won't show invisible players.", false));
+		new FilterSleepingSetting(net.wurstclient.util.text.WText.literal("Won't show sleeping players."), false),
+		new FilterInvisibleSetting(net.wurstclient.util.text.WText.literal("Won't show invisible players."), false));
 	
 	private final ArrayList<Player> players = new ArrayList<>();
 	

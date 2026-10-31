@@ -65,7 +65,7 @@ public final class AntiCrashHack extends Hack implements PacketInputListener
 
 		if(event.getPacket() instanceof ClientboundLevelParticlesPacket packet)
 		{
-			if(packet.getCount() > 100_000)
+			if(packet.count() > 100_000)
 				cancel(event);
 			return;
 		}

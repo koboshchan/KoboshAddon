@@ -62,12 +62,12 @@ public final class UseHack extends Hack implements RightClickListener
 			if(MC.hitResult.getType() == BlockHitResult.Type.BLOCK)
 			{
 				BlockHitResult hitResult = (BlockHitResult)MC.hitResult;
-				IMC.getInteractionManager().rightClickBlock(
+				((net.wurstclient.mixinterface.IMultiPlayerGameMode)MC.gameMode).rightClickBlock(
 					hitResult.getBlockPos(), hitResult.getDirection(),
 					hitResult.getLocation());
 			}
 			
-			IMC.getInteractionManager().rightClickItem();
+			((net.wurstclient.mixinterface.IMultiPlayerGameMode)MC.gameMode).rightClickItem();
 		}
 	}
 }

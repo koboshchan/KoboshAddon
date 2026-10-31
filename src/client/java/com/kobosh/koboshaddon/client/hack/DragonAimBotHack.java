@@ -45,7 +45,7 @@ public final class DragonAimBotHack extends Hack
 			30, 360, 10, ValueDisplay.DEGREES);
 	
 	private final AimAtSetting aimAt =
-		new AimAtSetting("What point in the dragon's hitbox to aim at.");
+		new AimAtSetting(net.wurstclient.util.text.WText.literal("What point in the dragon's hitbox to aim at."), net.wurstclient.settings.AimAtSetting.AimAt.CENTER);
 	
 	private final SliderSetting predictMovement = new SliderSetting(
 		"Predict movement",
@@ -142,7 +142,7 @@ public final class DragonAimBotHack extends Hack
 			Vec3 aimPoint = aimAt.getAimPoint(target);
 			
 			// Use movement prediction but maintain the aim point offset
-			double d = RotationUtils.getEyesPos()
+			double d = MC.player.getEyePosition()
 				.distanceTo(target.getBoundingBox().getCenter())
 				* predictMovement.getValue();
 			double posX =
@@ -201,7 +201,7 @@ public final class DragonAimBotHack extends Hack
 	
 	private void chooseTarget()
 	{
-		Stream<Entity> stream = EntityUtils.getAttackableEntities();
+		Stream<Entity> stream = EntityUtils.getEntities().filter(EntityUtils.IS_ATTACKABLE_RANGED);
 		
 		// Only target Ender Dragons
 		stream = stream.filter(e -> e instanceof EnderDragon);

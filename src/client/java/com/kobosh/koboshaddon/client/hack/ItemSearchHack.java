@@ -43,8 +43,8 @@ import net.wurstclient.settings.FaceTargetSetting.FaceTarget;
 import net.wurstclient.settings.ItemListSetting;
 import net.wurstclient.settings.SliderSetting;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
-import net.wurstclient.settings.SwingHandSetting;
-import net.wurstclient.settings.SwingHandSetting.SwingHand;
+import net.wurstclient.settings.InteractSwingSetting;
+import net.wurstclient.settings.InteractSwingSetting.InteractSwing;
 import net.wurstclient.util.ChatUtils;
 import net.wurstclient.util.chunk.ChunkUtils;
 
@@ -81,8 +81,8 @@ public final class ItemSearchHack extends Hack implements UpdateListener
 	private final FaceTargetSetting faceTarget =
 		FaceTargetSetting.withoutPacketSpam(this, FaceTarget.SERVER);
 	
-	private final SwingHandSetting swingHand =
-		new SwingHandSetting(this, SwingHand.SERVER);
+	private final InteractSwingSetting swingHand =
+		new InteractSwingSetting(this, InteractSwing.SERVER);
 	
 	private final Set<BlockPos> searchedChests = new HashSet<>();
 	private BlockPos currentTarget;

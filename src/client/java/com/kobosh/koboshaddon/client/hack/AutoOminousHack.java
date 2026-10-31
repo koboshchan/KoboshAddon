@@ -94,7 +94,7 @@ public final class AutoOminousHack extends Hack implements UpdateListener
 			// Keep using
 			InventoryUtils.selectItem(slot);
 			MC.options.keyUse.setDown(true);
-			IMC.getInteractionManager().rightClickItem();
+			((net.wurstclient.mixinterface.IMultiPlayerGameMode)MC.gameMode).rightClickItem();
 		}
 	}
 
@@ -152,7 +152,7 @@ public final class AutoOminousHack extends Hack implements UpdateListener
 
 		InventoryUtils.selectItem(slot);
 		MC.options.keyUse.setDown(true);
-		IMC.getInteractionManager().rightClickItem();
+		((net.wurstclient.mixinterface.IMultiPlayerGameMode)MC.gameMode).rightClickItem();
 	}
 
 	private void stopDrinking()

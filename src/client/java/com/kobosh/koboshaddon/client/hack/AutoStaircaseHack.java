@@ -95,7 +95,7 @@ public final class AutoStaircaseHack extends Hack implements UpdateListener
 			BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(ahead),
 				Direction.DOWN, ahead, false);
 			MC.gameMode.useItemOn(MC.player, InteractionHand.MAIN_HAND, hit);
-			MC.player.swing(InteractionHand.MAIN_HAND);
+			MC.player.swing(InteractionHand.MAIN_HAND, MC.player.getMainHandItem().getInteractAnimation(), false);
 		}else
 		{
 			MC.options.keyUp.setDown(true);

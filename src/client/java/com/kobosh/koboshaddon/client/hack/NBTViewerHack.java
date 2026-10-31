@@ -7,7 +7,6 @@
  */
 package com.kobosh.koboshaddon.client.hack;
 
-import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.gui.Font;
@@ -90,8 +89,7 @@ public final class NBTViewerHack extends Hack
 			posLookingAt = null;
 		
 		// Close NBT view with ESC
-		if(showingNBT && MC.gui.screen() == null && InputConstants.isKeyDown(MC.getWindow(),
-			GLFW.GLFW_KEY_ESCAPE))
+		if(showingNBT && MC.gui.screen() == null && InputConstants.isKeyDown(InputConstants.KEY_ESCAPE))
 		{
 			showingNBT = false;
 			nbtData = null;

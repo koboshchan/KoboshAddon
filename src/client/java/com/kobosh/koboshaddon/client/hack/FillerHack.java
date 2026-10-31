@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.stream.Collectors;
 
-import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
@@ -266,8 +265,7 @@ public final class FillerHack extends Hack
 	private void handlePositionSelection()
 	{
 		// continue with next step
-		if(step.pos != null && InputConstants
-			.isKeyDown(MC.getWindow(), GLFW.GLFW_KEY_ENTER))
+		if(step.pos != null && InputConstants.isKeyDown(InputConstants.KEY_RETURN))
 		{
 			step = Step.values()[step.ordinal() + 1];
 			
@@ -375,7 +373,7 @@ public final class FillerHack extends Hack
 			return;
 		
 		// prioritize the closest block
-		Vec3 eyesVec = RotationUtils.getEyesPos();
+		Vec3 eyesVec = MC.player.getEyePosition();
 		Comparator<BlockPos> cNextTargetBlock =
 			Comparator.comparingDouble(pos -> pos.distToCenterSqr(eyesVec));
 		
@@ -488,7 +486,7 @@ public final class FillerHack extends Hack
 			return false;
 		
 		// Check if within range
-		Vec3 eyesVec = RotationUtils.getEyesPos();
+		Vec3 eyesVec = MC.player.getEyePosition();
 		double distanceSq = pos.distToCenterSqr(eyesVec);
 		if(distanceSq > Math.pow(range.getValue(), 2))
 			return false;
@@ -534,7 +532,7 @@ public final class FillerHack extends Hack
 	
 	private ArrayList<BlockPos> getValidBlocks()
 	{
-		Vec3 eyesVec = RotationUtils.getEyesPos();
+		Vec3 eyesVec = MC.player.getEyePosition();
 		BlockPos eyesBlock = BlockPos.containing(eyesVec);
 		double rangeSq = Math.pow(range.getValue() + 0.5, 2);
 		int blockRange = range.getValueCeil();

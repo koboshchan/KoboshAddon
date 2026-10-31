@@ -219,7 +219,7 @@ public final class AutoLibrarian2Hack extends Hack implements UpdateListener
 		
 		// Build hit result pointing at villager's bounding box centre
 		AABB box = targetVillager.getBoundingBox();
-		Vec3 eyesPos = RotationUtils.getEyesPos();
+		Vec3 eyesPos = MC.player.getEyePosition();
 		Vec3 center = box.getCenter();
 		Vec3 hitVec = box.clip(eyesPos, center).orElse(center);
 		EntityHitResult hitResult =

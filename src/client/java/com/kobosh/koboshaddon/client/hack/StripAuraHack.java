@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.item.AxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
@@ -81,7 +81,7 @@ public final class StripAuraHack extends Hack implements UpdateListener
 		if(axeSlot == -1)
 			return;
 
-		Vec3 eyesVec = RotationUtils.getEyesPos();
+		Vec3 eyesVec = MC.player.getEyePosition();
 		BlockPos eyesBlock = BlockPos.containing(eyesVec);
 		double rangeSq = Math.pow(range.getValue(), 2);
 		int blockRange = range.getValueCeil();
@@ -91,7 +91,14 @@ public final class StripAuraHack extends Hack implements UpdateListener
 			.filter(BlockUtils::canBeClicked)
 			.filter(pos -> {
 				BlockState state = MC.level.getBlockState(pos);
-				return AxeItem.STRIPPABLES.containsKey(state.getBlock());
+				// AxeItem was replaced by data-driven block transformers in 26.3.
+				// Match registered stripped counterparts, including bamboo blocks.
+				var id = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+					.getKey(state.getBlock());
+				return !id.getPath().startsWith("stripped_")
+					&& net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(
+						net.minecraft.resources.Identifier.fromNamespaceAndPath(
+							id.getNamespace(), "stripped_" + id.getPath()));
 			})
 			.sorted(Comparator.comparingDouble(pos -> pos.distToCenterSqr(eyesVec)))
 			.collect(Collectors.toList());
@@ -108,7 +115,7 @@ public final class StripAuraHack extends Hack implements UpdateListener
 			BlockPos pos = logs.get(i);
 			BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
 			InteractionSimulator.rightClickBlock(hitResult);
-			MC.player.swing(InteractionHand.MAIN_HAND);
+			MC.player.swing(InteractionHand.MAIN_HAND, MC.player.getMainHandItem().getInteractAnimation(), false);
 		}
 
 		MC.player.getInventory().setSelectedSlot(oldSlot);
@@ -121,7 +128,7 @@ public final class StripAuraHack extends Hack implements UpdateListener
 		for(int slot = 0; slot < 9; slot++)
 		{
 			ItemStack stack = inventory.getItem(slot);
-			if(stack.getItem() instanceof AxeItem)
+			if(stack.is(ItemTags.AXES))
 				return slot;
 		}
 		return -1;
